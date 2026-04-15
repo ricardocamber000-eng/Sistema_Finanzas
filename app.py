@@ -141,50 +141,43 @@ st.markdown(f"""
 
     .main .block-container {{ padding-bottom: 150px; }}
 </style>
-""", unsafe_allow_html=True)
+.stApp {
+    background-color: #08001A !important; /* Fondo base oscuro profundo */
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(45, 0, 102, 0.5) 0px, transparent 50%), 
+        radial-gradient(at 100% 0%, rgba(212, 255, 0, 0.15) 0px, transparent 50%), 
+        radial-gradient(at 100% 100%, rgba(94, 0, 211, 0.4) 0px, transparent 50%),
+        radial-gradient(at 0% 100%, rgba(0, 212, 255, 0.2) 0px, transparent 50%);
+    background-attachment: fixed;
+    animation: aura-flow 15s ease infinite alternate;
+    color: #FFFFFF !important;
+}
 
-# --- SISTEMA DE IMPORTACIÓN INTELIGENTE ---
-if os.path.exists(DB_FILE):
-    df = pd.read_csv(DB_FILE)
-elif os.path.exists(OLD_DB):
-    df = pd.read_csv(OLD_DB)
-    df.to_csv(DB_FILE, index=False)
-    st.toast(f"✅ Datos migrados a {USER_ID.upper()}")
-else:
-    df = pd.DataFrame(columns=["Fecha", "Tipo", "Categoría", "Detalle", "Monto"])
+/* Animación para que las "auras" se muevan suavemente */
+@keyframes aura-flow {
+    0% {
+        background-size: 100% 100%;
+        background-position: 0% 0%;
+    }
+    50% {
+        background-size: 120% 120%;
+        background-position: 50% 50%;
+    }
+    100% {
+        background-size: 100% 100%;
+        background-position: 100% 100%;
+    }
+}
 
-if not df.empty:
-    df['Fecha'] = pd.to_datetime(df['Fecha']).dt.date
-
-balance = df[df["Tipo"] == "Ingreso"]["Monto"].sum() - df[df["Tipo"] == "Gasto"]["Monto"].sum() if not df.empty else 0
-goal_reached = balance >= META_AHORRO
-
-# --- CABECERA ---
-st.markdown(f"<div style='text-align:right;'><small style='opacity:0.5;'>Sesión: </small><b>{USER_ID.upper()}</b></div>", unsafe_allow_html=True)
-
-# --- NAVEGACIÓN ---
-t_h, t_c, t_s, t_g, t_i = st.tabs(["🏠", "⚙️", "🐷", "🛍️", "💼"])
-
-with t_h:
-    st.markdown("### Resumen")
-    c1, c2 = st.columns(2)
-    with c1: 
-        st.markdown(f"<div class='card-resumen'><small style='opacity:0.5;'>SALDO</small><h2 style='margin:0;'>${balance:,.2f}</h2></div>", unsafe_allow_html=True)
-    with c2:
-        perc = min(int((balance/META_AHORRO)*100), 100) if META_AHORRO > 0 else 0
-        st.markdown(f"<div class='card-resumen'><small style='opacity:0.5;'>META</small><h2 style='color:{accent}; margin:0;'>{perc}%</h2></div>", unsafe_allow_html=True)
-    
-    st.markdown("#### Actividad Reciente")
-    if not df.empty:
-        # MEJORA: Filtrar filas con datos válidos para evitar nan/NaT
-        recent_df = df[df['Detalle'].notna() & df['Fecha'].notna()].sort_values(by="Fecha", ascending=False).head(4)
-        if not recent_df.empty:
-            for i, r in recent_df.iterrows():
-                st.markdown(f"<div class='history-card'><b>{r['Detalle']}</b><br><small>{r['Fecha']}</small> • <span style='color:{accent if r['Tipo']=='Ingreso' else '#FF4B4B'}'>${r['Monto']:,.2f}</span></div>", unsafe_allow_html=True)
-        else:
-            st.info("No hay actividad reciente válida.")
-    else:
-        st.info("Haga su primera transacción para ver la actividad.")
+/* Efecto Glassmorphism para las tarjetas (Cards) */
+/* Esto hará que el fondo de aura se vea a través de tus cuadros de saldo */
+.card-resumen, .history-card {
+    background: rgba(255, 255, 255, 0.03) !important; 
+    backdrop-filter: blur(40px) saturate(150%);
+    -webkit-backdrop-filter: blur(40px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
 
 with t_s:
     st.header("Metas 🐷")
