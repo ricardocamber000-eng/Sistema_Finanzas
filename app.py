@@ -18,7 +18,7 @@ st.markdown(f"""
     <style>
     /* Fondo General */
     .stApp {{
-        background-image: url("{BG_IMAGE}");
+        background-image: url("https://github.com/ricardocamber000-eng/Sistema_Finanzas/blob/main/Logo_RC.png");
         background-size: cover;
         background-attachment: fixed;
         background-color: #0F1218;
