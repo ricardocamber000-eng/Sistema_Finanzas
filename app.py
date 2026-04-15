@@ -136,7 +136,7 @@ goal_reached = balance >= META_AHORRO
 t_h, t_c, t_s, t_g, t_i = st.tabs(["🏠", "⚙️", "🐷", "🛍️", "💼"])
 
 with t_h:
-    st.markdown("### Resumen")
+    st.markdown("### Hola, Bienvenido")
     c1, c2 = st.columns(2)
     with c1: 
         st.markdown(f"<div class='card-resumen'><small style='opacity:0.5;'>SALDO</small><h2 style='margin:0;'>${balance:,.2f}</h2></div>", unsafe_allow_html=True)
