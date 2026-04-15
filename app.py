@@ -114,32 +114,33 @@ with st.sidebar:
             else:
                 st.error("Completa el concepto y monto.")
 
-# 6. LÓGICA DE VISUALIZACIÓN CENTRAL
-if seccion == "🏠 Inicio":
-    # Cálculo de Saldo
-    total_in = df[df["Tipo"] == "Ingreso"]["Monto"].sum() if not df.empty else 0
-    total_out = df[df["Tipo"] == "Gasto"]["Monto"].sum() if not df.empty else 0
-    balance = total_in - total_out
+# 6. CÁLCULOS GLOBALES (Definir antes de las secciones para evitar NameError)
+if not df.empty:
+    total_in = df[df["Tipo"] == "Ingreso"]["Monto"].sum()
+    total_out = df[df["Tipo"] == "Gasto"]["Monto"].sum()
+else:
+    total_in = 0
+    total_out = 0
 
+total_balance = total_in - total_out
+
+# 7. LÓGICA DE VISUALIZACIÓN CENTRAL
+if seccion == "🏠 Inicio":
+    # --- DISEÑO DE SALDO CENTRAL ---
     st.markdown(f"""
     <div class="main-balance">
         <p style="color:#C69F40 !important; font-weight:bold; letter-spacing:4px; margin-bottom:5px;">SALDO DISPONIBLE</p>
-        <h1 style="font-size:5em; margin:0; font-weight:800; color:white;">${balance:,.2f}</h1>
+        <h1 style="font-size:5em; margin:0; font-weight:800; color:white;">${total_balance:,.2f}</h1>
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("<h3 style='margin-bottom:20px; color:white;'>Historial Reciente</h3>", unsafe_allow_html=True)
-    
+    # ... (resto de tu código de historial)
+
+elif seccion == "📊 Análisis Interactivo":
+    st.title("Panel de Control Visual")
     if not df.empty:
-        # Ordenamos por fecha descendente y mostramos con botón de eliminar
-        temp_df = df.sort_values(by="Fecha", ascending=False).head(10)
-        for idx, r in temp_df.iterrows():
-            txt_color = "#00FF9D" if r['Tipo'] == "Ingreso" else "#FF4B4B"
-            simbolo = "+" if r['Tipo'] == "Ingreso" else "-"
-            
-            col_card, col_del = st.columns([0.9, 0.1])
-            with col_card:
-                st.markdown(f"""
-                <div class="history-card">
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
+        # Aquí ya puedes usar total_in o total_out sin errores
+        st.metric("Gastos Totales", f"${total_out:,.2f}") 
+        
+        gastos_only = df[df["Tipo"] == "Gasto"]
+        # ... (resto de tu código de gráficos)
