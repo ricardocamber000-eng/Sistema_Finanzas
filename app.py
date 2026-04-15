@@ -111,45 +111,46 @@ with tab_home:
 with tab_stats:
     st.header("Análisis de Gastos")
     if not df.empty:
-        # 1. Crear columna de Mes-Año para el filtro
-        df['Mes-Año'] = pd.to_datetime(df['Fecha']).dt.strftime('%m-%Y')
+        # 1. Asegurar formato de fecha y crear filtro
+        df['Fecha'] = pd.to_datetime(df['Fecha'])
+        df['Mes-Año'] = df['Fecha'].dt.strftime('%m-%Y')
         meses_disponibles = df['Mes-Año'].unique()
         
-        # 2. Selector de mes
         mes_seleccionado = st.selectbox("Selecciona un mes para analizar:", meses_disponibles)
         
-        # 3. Filtrar datos por mes y por tipo "Gasto"
+        # 2. Filtrar
         df_mes = df[df['Mes-Año'] == mes_seleccionado]
         df_gastos = df_mes[df_mes["Tipo"] == "Gasto"]
 
         if not df_gastos.empty:
-            # 4. Generar el gráfico (Asegúrate de cerrar todos los paréntesis)
+            # 3. Definir colores manuales para evitar errores de librería
+            colores_dorados = ['#C69F40', '#D4AF37', '#B8860B', '#8A6D2D', '#555555']
+
+            # 4. Crear gráfico con manejo estricto de paréntesis
             fig = px.pie(
                 df_gastos, 
                 values='Monto', 
                 names='Categoría', 
                 hole=0.6,
-                title=f"Distribución de Gastos ({mes_seleccionado})",
-                color_discrete_sequence=px.colors.sequential.Golds
+                title=f"Gastos de {mes_seleccionado}",
+                color_discrete_sequence=colores_dorados
             )
             
-            # 5. Estética del gráfico
             fig.update_layout(
                 paper_bgcolor='rgba(0,0,0,0)', 
                 font_color="white", 
                 showlegend=True
             )
             
-            # Mostrar en Streamlit
             st.plotly_chart(fig, use_container_width=True)
             
-            # Resumen numérico
-            total_mes = df_gastos['Monto'].sum()
-            st.write(f"**Total gastado en {mes_seleccionado}:** ${total_mes:,.2f}")
+            # Resumen
+            total_gastado = df_gastos['Monto'].sum()
+            st.info(f"💰 Total gastado en este mes: **${total_gastado:,.2f}**")
         else:
             st.warning(f"No hay gastos registrados en {mes_seleccionado}.")
     else:
-        st.info("Ingresa algunos datos para poder ver el análisis detallado.")
+        st.info("Ingresa datos en las otras pestañas para ver el análisis.")
 
 # --- TAB 3: GASTOS ---
 with tab_expenses:
