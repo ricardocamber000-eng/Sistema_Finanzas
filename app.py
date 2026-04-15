@@ -57,7 +57,7 @@ st.markdown(f"""
         100% {{ background-size: 100% 100%; background-position: 100% 100%; }}
     }}
 
-    .card-resumen, .history-card, [data-testid="stForm"] {{
+    .card-resumen, .history-card, [data-testid="stForm"], .meta-container {{
         background: rgba(255, 255, 255, 0.03) !important;
         backdrop-filter: blur(35px) saturate(170%);
         border-radius: 28px;
@@ -111,12 +111,19 @@ t_h, t_c, t_s, t_g, t_i = st.tabs(["🏠", "⚙️", "🐷", "🛍️", "💼"])
 
 with t_h:
     st.markdown(f"### Hola, {USER_ID.upper()}")
-    c1, c2 = st.columns(2)
-    with c1: 
-        st.markdown(f"<div class='card-resumen'><small style='opacity:0.6;'>DISPONIBLE</small><h2 style='margin:0; color:#D4FF00;'>${balance:,.2f}</h2></div>", unsafe_allow_html=True)
-    with c2:
-        perc = min(int((balance/META_AHORRO)*100), 100) if META_AHORRO > 0 else 0
-        st.markdown(f"<div class='card-resumen'><small style='opacity:0.6;'>META</small><h2 style='margin:0;'>{perc}%</h2></div>", unsafe_allow_html=True)
+    # Usamos HTML para asegurar que el diseño sea responsivo sin st.columns
+    st.markdown(f"""
+        <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+            <div class="card-resumen" style="flex: 1; margin-bottom: 0;">
+                <small style="opacity:0.6;">DISPONIBLE</small>
+                <h2 style="margin:0; color:#D4FF00;">${balance:,.2f}</h2>
+            </div>
+            <div class="card-resumen" style="flex: 1; margin-bottom: 0;">
+                <small style="opacity:0.6;">META</small>
+                <h2 style="margin:0;">{min(int((balance/META_AHORRO)*100), 100) if META_AHORRO > 0 else 0}%</h2>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
     
     st.markdown("#### Actividad Reciente")
     if not df.empty:
@@ -124,45 +131,58 @@ with t_h:
         for _, r in recents.iterrows():
             st.markdown(f"<div class='history-card'><b>{r['Detalle']}</b><br><small>{r['Fecha']}</small> • <span style='color:#D4FF00;'>${r['Monto']:,.2f}</span></div>", unsafe_allow_html=True)
 
-# --- MEJORA: SECCIÓN METAS DE AHORRO ---
+# --- SECCIÓN METAS DE AHORRO (SIN ST.COLUMNS) ---
 with t_s:
     st.header("🎯 Mi Meta de Ahorro")
     
-    col_meta, col_info = st.columns()
-    
-    with col_meta:
-        m_input = st.number_input("Establecer Objetivo ($)", value=float(META_AHORRO), step=100.0)
-        if m_input != META_AHORRO:
-            with open(CONFIG_FILE, "w") as f: 
-                json.dump({"meta_ahorro": m_input}, f)
-            st.rerun()
-
-    # Cálculos dinámicos
-    faltante = max(m_input - balance, 0.0)
-    prog = min(max(balance / m_input, 0.0), 1.0) if m_input > 0 else 0
+    # Cálculos previos
+    faltante = max(META_AHORRO - balance, 0.0)
+    prog = min(max(balance / META_AHORRO, 0.0), 1.0) if META_AHORRO > 0 else 0
     porcentaje = int(prog * 100)
 
-    with col_info:
-        if faltante > 0:
-            st.markdown(f"<div style='text-align:right;'><small style='opacity:0.6;'>FALTAN PARA LA META</small><h3 style='color:#FF4B4B; margin:0;'>${faltante:,.2f}</h3></div>", unsafe_allow_html=True)
-        else:
-            st.markdown(f"<div style='text-align:right;'><small style='opacity:0.6;'>¡META ALCANZADA!</small><h3 style='color:#D4FF00; margin:0;'>✨ ¡Felicidades!</h3></div>", unsafe_allow_html=True)
-
-    # Barra de progreso mejorada
-    st.markdown(f"""
-        <div style="margin-top: 20px;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                <span style="font-weight:bold; color:#D4FF00;">{porcentaje}% completado</span>
-                <span style="opacity:0.6;">${balance:,.2f} de ${m_input:,.2f}</span>
+    # Bloque de información superior
+    if faltante > 0:
+        st.markdown(f"""
+            <div class="meta-container" style="text-align: center;">
+                <small style="opacity:0.6; letter-spacing: 1px;">TE FALTAN PARA TU OBJETIVO</small>
+                <h1 style="color:#FF4B4B; margin: 10px 0;">${faltante:,.2f}</h1>
             </div>
-            <div style="width: 100%; background: rgba(255,255,255,0.05); border-radius: 20px; height: 24px; border: 1px solid rgba(255,255,255,0.1);">
-                <div style="width: {prog*100}%; background: linear-gradient(90deg, #D4FF00, #A6FF00); height: 100%; border-radius: 20px; box-shadow: 0 0 20px rgba(212, 255, 0, 0.3); transition: width 0.5s ease-in-out;"></div>
+        """, unsafe_allow_html=True)
+    else:
+        st.markdown(f"""
+            <div class="meta-container" style="text-align: center; border: 1px solid #D4FF00;">
+                <h2 style="color:#D4FF00; margin: 0;">✨ ¡META ALCANZADA!</h2>
+                <p style="margin: 5px 0 0 0; opacity: 0.8;">Has superado tu objetivo de ahorro.</p>
+            </div>
+        """, unsafe_allow_html=True)
+
+    # Input de ajuste de meta
+    new_meta = st.number_input("Ajustar mi objetivo total ($)", value=float(META_AHORRO), step=100.0)
+    if new_meta != META_AHORRO:
+        with open(CONFIG_FILE, "w") as f: 
+            json.dump({"meta_ahorro": new_meta}, f)
+        st.rerun()
+
+    # Barra de progreso visual
+    st.markdown(f"""
+        <div style="margin-top: 25px; padding: 10px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
+                <span style="font-weight:800; color:#D4FF00; font-size: 1.1rem;">{porcentaje}%</span>
+                <span style="opacity:0.6;">Goal: ${META_AHORRO:,.0f}</span>
+            </div>
+            <div style="width: 100%; background: rgba(255,255,255,0.07); border-radius: 30px; height: 26px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden;">
+                <div style="width: {prog*100}%; 
+                            background: linear-gradient(90deg, #D4FF00, #A6FF00); 
+                            height: 100%; 
+                            box-shadow: 0 0 25px rgba(212, 255, 0, 0.4);
+                            transition: width 0.8s ease-in-out;">
+                </div>
             </div>
         </div>
     """, unsafe_allow_html=True)
 
     if faltante > 0:
-        st.info(f"💡 Si ahorras $50 semanales, llegarás a tu meta en {int(faltante/50) + 1} semanas.")
+        st.info(f"💡 Tip: Si ahorras $50 semanales adicionales, alcanzarás tu meta en {int(faltante/50) + 1} semanas.")
 
 with t_c:
     st.subheader("Configuración")
@@ -197,6 +217,4 @@ with t_i:
         if st.form_submit_button("CARGAR INGRESO"):
             final_det = det_select if det_select else det_new
             if final_det and mon > 0:
-                new = pd.DataFrame([[date.today(), "Ingreso", "Depósito", final_det, mon]], columns=df.columns)
-                pd.concat([df, new]).to_csv(DB_FILE, index=False)
-                st.rerun()
+                new = pd.DataFrame([[date.today(), "Ingreso", "Depósito", final_det, mon]], columns=df
