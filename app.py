@@ -11,7 +11,6 @@ st.set_page_config(
 )
 
 # 2. RUTA DE LA IMAGEN DE FONDO
-# Asegúrate de que '9313.jpg' esté en la misma carpeta que este archivo en GitHub
 BG_IMAGE = "9313.jpg" 
 
 # 3. ESTILO CSS: ICONO DORADO Y DISEÑO PREMIUM
@@ -71,7 +70,7 @@ st.markdown(f"""
         width: 100%;
     }}
 
-    /* Forzar textos en blanco para legibilidad */
+    /* Textos en blanco */
     h1, h2, h3, p, label, span, .stMarkdown {{
         color: white !important;
     }}
@@ -86,7 +85,7 @@ if os.path.exists(DB_FILE):
 else:
     df = pd.DataFrame(columns=["Fecha", "Tipo", "Categoría", "Detalle", "Monto"])
 
-# Cálculo de Saldo Vivo (Ingresos menos Gastos)
+# Cálculo de Saldo Vivo
 total_in = df[df["Tipo"] == "Ingreso"]["Monto"].sum()
 total_out = df[df["Tipo"] == "Gasto"]["Monto"].sum()
 saldo = total_in - total_out
@@ -94,10 +93,8 @@ saldo = total_in - total_out
 # --- 5. SIDEBAR: REGISTRO DE MOVIMIENTOS ---
 with st.sidebar:
     st.title("💸 Operaciones")
-    st.write("Usa este panel para registrar tus movimientos.")
     st.write("---")
     
-    # Pestañas para organizar el Sidebar
     tab_gasto, tab_ingreso = st.tabs(["📉 Gasto", "📈 Ingreso"])
     
     with tab_gasto:
@@ -122,4 +119,40 @@ with st.sidebar:
                 st.rerun()
 
 # --- 6. FRONT PRINCIPAL: DASHBOARD ---
-st.markdown("<h3 style='text
+st.markdown("<h3 style='text-align: center; opacity: 0.5; letter-spacing: 5px;'>WALLETPRO</h3>", unsafe_allow_html=True)
+
+# Widget de Saldo
+st.markdown(f"""
+    <div class="main-balance">
+        <p style="margin:0; opacity:0.6; letter-spacing: 4px; font-size:0.9em;">SALDO DISPONIBLE</p>
+        <h1 style="margin:0; font-size:4.5em; font-weight:900;">${saldo:,.2f}</h1>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Historial de Movimientos
+st.subheader("Historial de Movimientos")
+
+if not df.empty:
+    # Lógica de ordenado corregida sin errores de paréntesis
+    df_sorted = df.sort_values(by="Fecha", ascending=False).head(20)
+    
+    for _, row in df_sorted.iterrows():
+        is_in = row['Tipo'] == "Ingreso"
+        c_monto = "#00ff88" if is_in else "#ff4b4b"
+        simb = "+" if is_in else "-"
+        
+        st.markdown(f"""
+            <div class="history-card">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div style="font-weight:700; font-size:1.1em; color:white;">{row['Detalle']}</div>
+                        <div style="font-size:0.8em; opacity:0.5; color:white;">{row['Categoría']} • {row['Fecha']}</div>
+                    </div>
+                    <div style="color:{c_monto}; font-weight:800; font-size:1.3em;">
+                        {simb}${row['Monto']:,.2f}
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+else:
+    st.info("El historial está vacío. Despliega el menú lateral (icono dorado) para comenzar.")
