@@ -99,6 +99,52 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
+import streamlit.components.v1 as components
+
+def biometric_button():
+    # Este JS simula la ceremonia de creación de una Passkey (Huella/FaceID)
+    js_code = """
+    <script>
+    async function registerBiometric() {
+        const options = {
+            publicKey: {
+                challenge: Uint8Array.from("random_challenge", c => c.charCodeAt(0)),
+                rp: { name: "R.C Finanzas" },
+                user: {
+                    id: Uint8Array.from("admin", c => c.charCodeAt(0)),
+                    name: "admin@finanzas.pro",
+                    displayName: "Admin"
+                },
+                pubKeyCredParams: [{alg: -7, type: "public-key"}],
+                authenticatorSelection: { authenticatorAttachment: "platform" },
+                timeout: 60000
+            }
+        };
+
+        try {
+            const credential = await navigator.credentials.create(options);
+            window.parent.postMessage({type: 'biometric_success', id: credential.id}, "*");
+            alert("¡Huella registrada con éxito!");
+        } catch (err) {
+            console.error(err);
+            alert("Error: El dispositivo no soporta biometría o se canceló.");
+        }
+    }
+    </script>
+    <button onclick="registerBiometric()" style="
+        background-color: #D4FF00; 
+        color: black; 
+        border: none; 
+        padding: 15px 30px; 
+        border-radius: 40px; 
+        font-weight: bold;
+        cursor: pointer;
+        width: 100%;
+        text-transform: uppercase;">
+        🔗 Vincular Huella Dactilar
+    </button>
+    """
+    components.html(js_code, height=100)
 # --- SISTEMA DE SEGURIDAD PREMIUM ---
 if "authenticated" not in st.session_state:
     st.markdown(f"""
