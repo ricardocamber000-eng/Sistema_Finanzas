@@ -13,13 +13,13 @@ def check_password():
     def login_form():
         with st.form("Login"):
             st.markdown("<h3 style='text-align:center;'>Control de Acceso</h3>", unsafe_allow_html=True)
-            user = st.text_input("Rcarrero")
-            password = st.text_input("Balto30", type="password")
+            user = st.text_input("User")
+            password = st.text_input("Contraseña", type="password")
             submit = st.form_submit_button("Entrar")
             
             # Credenciales (puedes cambiarlas aquí)
             if submit:
-                if user == "admin" and password == "1234":
+                if user == "Rcarrero" and password == "Balto30":
                     st.session_state["authenticated"] = True
                     st.rerun()
                 else:
