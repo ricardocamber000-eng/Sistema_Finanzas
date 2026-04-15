@@ -194,3 +194,4 @@ with tab_income:
             new = pd.DataFrame([[date.today(), "Ingreso", "Depósito", d, m]], columns=df.columns)
             pd.concat([df, new]).to_csv(DB_FILE, index=False)
             st.rerun()
+            
