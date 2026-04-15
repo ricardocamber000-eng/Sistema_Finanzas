@@ -143,7 +143,21 @@ with tab_stats:
             )
             
             st.plotly_chart(fig, use_container_width=True)
+            st.subheader(f"Detalle de Gastos: {mes_seleccionado}")
             
+            # Seleccionamos solo las columnas interesantes y ordenamos
+            tabla_detalle = df_gastos[['Fecha', 'Categoría', 'Detalle', 'Monto']].sort_values(by="Monto", ascending=False)
+            
+            # Formateamos la columna monto para que se vea como moneda en la tabla
+            st.dataframe(
+                tabla_detalle,
+                column_config={
+                    "Monto": st.column_config.NumberColumn("Monto ($)", format="$ %.2f"),
+                    "Fecha": st.column_config.DateColumn("Fecha", format="DD/MM/YYYY")
+                },
+                hide_index=True,
+                use_container_width=True
+            )
             # Resumen
             total_gastado = df_gastos['Monto'].sum()
             st.info(f"💰 Total gastado en este mes: **${total_gastado:,.2f}**")
