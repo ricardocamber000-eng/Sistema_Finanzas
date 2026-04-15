@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import date
 import os
 
-# 1. CONFIGURACIÓN
+# 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="R.C Finanzas", page_icon="👑", layout="centered")
 
 # 2. RECURSOS
@@ -11,7 +11,7 @@ BG_IMAGE = "9313.jpg"
 LOGO_FILE = "Logo_RC.png"
 DB_FILE = "wallet_database.csv"
 
-# 3. CSS (Doble llave {{ }} para proteger el código de errores)
+# 3. CSS (Doble llave {{ }} para evitar SyntaxError con f-strings)
 st.markdown(f"""
 <style>
     .stApp {{
@@ -58,7 +58,7 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-# 4. DATOS
+# 4. LÓGICA DE DATOS
 if os.path.exists(DB_FILE):
     df = pd.read_csv(DB_FILE)
     df['Fecha'] = pd.to_datetime(df['Fecha']).dt.date
@@ -67,24 +67,24 @@ else:
 
 total_in = df[df["Tipo"] == "Ingreso"]["Monto"].sum() if not df.empty else 0
 total_out = df[df["Tipo"] == "Gasto"]["Monto"].sum() if not df.empty else 0
-saldo = total_in - total_out
+saldo_actual = total_in - total_out
 
 # 5. SIDEBAR
 with st.sidebar:
-    # Ajuste del Logo: Forzamos el argumento para que no de error
+    # CORRECCIÓN LÍNEA 76: Se añade para definir las columnas
     if os.path.exists(LOGO_FILE):
-        c_left, c_mid, c_right = st.columns()
-        with c_mid:
+        c_l, c_m, c_r = st.columns()
+        with c_m:
             st.image(LOGO_FILE, width=150)
             
     st.markdown("<h2 style='text-align:center; color:#C69F40 !important; margin-top:-15px;'>R.C FINANZAS</h2>", unsafe_allow_html=True)
     st.write("---")
     
-    tab_g, tab_i = st.tabs(["📉 Gasto", "📈 Ingreso"])
+    t_g, t_i = st.tabs(["📉 Gasto", "📈 Ingreso"])
     
-    with tab_g:
+    with t_g:
         cat = st.selectbox("Categoría", ["Deudas", "Servicios", "Mercado", "Varios"])
-        with st.form("f_g"):
+        with st.form("f_gasto"):
             det = st.text_input("Concepto")
             mon = st.number_input("Monto ($)", min_value=0.0)
             if st.form_submit_button("REGISTRAR GASTO"):
@@ -93,8 +93,8 @@ with st.sidebar:
                 df.to_csv(DB_FILE, index=False)
                 st.rerun()
                 
-    with tab_i:
-        with st.form("f_i"):
+    with t_i:
+        with st.form("f_ingreso"):
             ori = st.text_input("Origen")
             mon_i = st.number_input("Monto ($) ", min_value=0.0)
             if st.form_submit_button("AÑADIR A SALDO"):
@@ -109,7 +109,7 @@ st.markdown("<h3 style='text-align:center; opacity:0.4; letter-spacing:6px;'>R.C
 st.markdown(f"""
 <div class="main-balance">
     <p style="margin:0; color:#C69F40 !important; font-weight:bold; letter-spacing:3px;">SALDO DISPONIBLE</p>
-    <h1 style="margin:0; font-size:4.8em; font-weight:800;">${saldo:,.2f}</h1>
+    <h1 style="margin:0; font-size:4.8em; font-weight:800;">${saldo_actual:,.2f}</h1>
 </div>
 """, unsafe_allow_html=True)
 
@@ -118,23 +118,22 @@ st.subheader("Movimientos Recientes")
 if not df.empty:
     df_v = df.sort_values(by="Fecha", ascending=False).head(10)
     for i, r in df_v.iterrows():
-        color = "#00ff88" if r['Tipo'] == "Ingreso" else "#ff4b4b"
-        pref = "+" if r['Tipo'] == "Ingreso" else "-"
+        color_val = "#00ff88" if r['Tipo'] == "Ingreso" else "#ff4b4b"
+        pref_val = "+" if r['Tipo'] == "Ingreso" else "-"
         
-        # Estructura de tarjeta sin f-strings complejos para evitar errores
-        card = f"""
+        card_html = f"""
         <div class="history-card">
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div style="text-align:left;">
                     <div style="font-weight:bold; font-size:1.1em; color:white;">{r['Detalle']}</div>
                     <div style="font-size:0.85em; opacity:0.6; color:white;">{r['Categoría']} • {r['Fecha']}</div>
                 </div>
-                <div style="color:{color}; font-weight:900; font-size:1.4em; text-align:right;">
-                    {pref}${r['Monto']:,.2f}
+                <div style="color:{color_val}; font-weight:900; font-size:1.4em; text-align:right;">
+                    {pref_val}${r['Monto']:,.2f}
                 </div>
             </div>
         </div>
         """
-        st.markdown(card, unsafe_allow_html=True)
+        st.markdown(card_html, unsafe_allow_html=True)
 else:
-    st.info("Sin registros.")
+    st.info("No hay movimientos registrados.")
