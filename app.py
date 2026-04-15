@@ -7,36 +7,64 @@ import json
 # 1. CONFIGURACIÓN E IDENTIDAD
 st.set_page_config(page_title="R.C Finanzas Pro", page_icon="👑", layout="centered")
 
-# --- CONTROL DE ACCESO (V1.2) ---
+Si prefieres no usar st.columns() (o si te sigue dando problemas de visualización), el mejor método alternativo en Streamlit para centrar contenido y darle una estructura de "tarjeta" profesional es usar st.container() combinado con CSS personalizado.
 
+Esto te permite definir un ancho máximo fijo para el formulario, asegurando que se vea bien tanto en móviles como en pantallas de escritorio sin depender de columnas vacías.
+
+Nueva Estrategia: Contenedor con Ancho Fijo
+Reemplaza tu bloque de login por este código. He eliminado las columnas y he inyectado una regla de estilo que limita el ancho del formulario para que siempre aparezca centrado.
+
+Python
+# --- CONTROL DE ACCESO (V1.6 - Método Container) ---
 USUARIOS = {"admin": "1234", "roberto": "5555", "invitado": "0000"}
 
-
+# Inyectamos el estilo para centrar el formulario manualmente
+st.markdown("""
+<style>
+    /* Limitamos el ancho del formulario y lo centramos con margin: auto */
+    [data-testid="stForm"] {
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+        background: rgba(20, 0, 40, 0.5) !important;
+        backdrop-filter: blur(20px);
+        border-radius: 25px !important;
+        border: 1px solid rgba(150, 0, 255, 0.2) !important;
+        padding: 30px !important;
+    }
+    
+    /* Centrar el encabezado */
+    .login-header {
+        text-align: center;
+        margin-bottom: 20px;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 if "authenticated" not in st.session_state:
+    # Encabezado fuera del formulario para que no se vea "encerrado"
+    st.markdown("""
+        <div class="login-header">
+            <h1 style='font-size: 60px;'>👑</h1>
+            <h2 style='color: #D4FF00; margin-top:-20px;'>R.C FINANZAS</h2>
+            <p style='opacity:0.6;'>Acceso Premium</p>
+        </div>
+    """, unsafe_allow_html=True)
 
-    st.markdown("<div style='text-align:center; padding:50px 0;'><h1>👑</h1><h2>R.C FINANZAS</h2><p style='opacity:0.5;'>V1.2 Premium</p></div>", unsafe_allow_html=True)
-
-    with st.form("Login"):
-
-        u = st.text_input("Usuario").lower().strip()
-
-        p = st.text_input("PIN", type="password")
-
-        if st.form_submit_button("ENTRAR"):
-
-            if u in USUARIOS and USUARIOS[u] == p:
-
-                st.session_state.authenticated = True
-
-                st.session_state.user = u
-
-                st.rerun()
-
-            else: 
-
-                st.error("Acceso incorrecto")
-
+    # Usamos un st.container en lugar de columnas
+    with st.container():
+        with st.form("Login"):
+            u = st.text_input("Usuario").lower().strip()
+            p = st.text_input("PIN", type="password")
+            submit = st.form_submit_button("ENTRAR AL SISTEMA")
+            
+            if submit:
+                if u in USUARIOS and USUARIOS[u] == p:
+                    st.session_state.authenticated = True
+                    st.session_state.user = u
+                    st.rerun()
+                else:
+                    st.error("Credenciales incorrectas")
     st.stop()
 
 # --- LÓGICA DE DATOS PERSISTENTES POR USUARIO (V1.2) ---
