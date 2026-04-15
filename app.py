@@ -120,7 +120,7 @@ with tab_stats:
         if not df_gastos.empty:
             fig = px.pie(df_gastos, values='Monto', names='Categoría', hole=0.6,
                          title=f"Distribución de Gastos ({mes_seleccionado})",
-                         color_discrete_sequence=px.colors.sequential.Gold)
+                        color_discrete_sequence=px.colors.sequential.Golds
             fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color="white", showlegend=True)
             st.plotly_chart(fig, use_container_width=True)
             
