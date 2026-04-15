@@ -73,7 +73,6 @@ with tab_home:
     total_out = df[df["Tipo"] == "Gasto"]["Monto"].sum() if not df.empty else 0
     balance = total_in - total_out
     
-    # Mejora: Tarjeta Premium Dinámica
     color_borde = "#C69F40" if balance >= 0 else "#FF4B4B"
     st.markdown(f"""
     <div style="background: rgba(255, 255, 255, 0.03); border-radius: 20px; padding: 30px; 
@@ -86,7 +85,6 @@ with tab_home:
     st.subheader("Actividad Reciente")
     if not df.empty:
         for i, r in df.sort_values(by="Fecha", ascending=False).head(8).iterrows():
-            # Mejora: Icono dinámico
             icono = ICONOS.get(r['Categoría'], "📝") if r['Tipo'] == "Gasto" else "💰"
             color_monto = "#00FF9D" if r['Tipo'] == "Ingreso" else "#FF4B4B"
             
@@ -104,21 +102,47 @@ with tab_home:
             """, unsafe_allow_html=True)
 
 with tab_stats:
-    st.header("Análisis Mensual")
+    st.header("Análisis de Finanzas")
+    
     if not df.empty:
-        df['Fecha'] = pd.to_datetime(df['Fecha'])
-        df['Mes-Año'] = df['Fecha'].dt.strftime('%m-%Y')
-        mes = st.selectbox("Seleccionar Mes", df['Mes-Año'].unique())
+        # Preparación de datos temporales
+        df_temp = df.copy()
+        df_temp['Fecha'] = pd.to_datetime(df_temp['Fecha'])
+        df_temp['Mes-Año'] = df_temp['Fecha'].dt.strftime('%m-%Y')
+        df_temp['Mes-Orden'] = df_temp['Fecha'].dt.to_period('M').astype(str)
+
+        # 1. GRÁFICO DE BARRAS (COMPARATIVA MENSUAL)
+        st.subheader("Ingresos vs Gastos por Mes")
+        df_resumen = df_temp.groupby(['Mes-Orden', 'Tipo'])['Monto'].sum().reset_index()
         
-        df_mes = df[(df['Mes-Año'] == mes) & (df['Tipo'] == "Gasto")]
+        fig_barras = px.bar(
+            df_resumen,
+            x='Mes-Orden',
+            y='Monto',
+            color='Tipo',
+            barmode='group',
+            color_discrete_map={'Ingreso': '#00FF9D', 'Gasto': '#FF4B4B'}
+        )
+        fig_barras.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
+        st.plotly_chart(fig_barras, use_container_width=True)
+
+        st.divider()
+
+        # 2. GRÁFICO DE PASTEL (DETALLE POR CATEGORÍA)
+        st.subheader("Distribución de Gastos")
+        mes_sel = st.selectbox("Filtrar detalle por mes:", df_temp['Mes-Año'].unique())
+        
+        df_mes = df_temp[(df_temp['Mes-Año'] == mes_sel) & (df_temp['Tipo'] == "Gasto")]
         
         if not df_mes.empty:
-            fig = px.pie(df_mes, values='Monto', names='Categoría', hole=0.5,
-                         color_discrete_sequence=['#C69F40', '#D4AF37', '#B8860B', '#8A6D2D'])
-            fig.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color="white")
-            st.plotly_chart(fig, use_container_width=True)
+            fig_pie = px.pie(df_mes, values='Monto', names='Categoría', hole=0.5,
+                             color_discrete_sequence=['#C69F40', '#D4AF37', '#B8860B', '#8A6D2D'])
+            fig_pie.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color="white")
+            st.plotly_chart(fig_pie, use_container_width=True)
         else:
-            st.info("No hay gastos en este mes.")
+            st.info("No hay gastos registrados en el mes seleccionado.")
+    else:
+        st.info("Aún no hay datos para mostrar el análisis.")
 
 with tab_expenses:
     st.header("Registrar Gasto 🛍️")
@@ -127,7 +151,7 @@ with tab_expenses:
         det = st.text_input("¿En qué gastaste?")
         mon = st.number_input("Monto ($)", min_value=0.0)
         if st.form_submit_button("GUARDAR GASTO"):
-            new = pd.DataFrame([[date.today(), "Gasto", cat, det, mon]], columns=df.columns[:5])
+            new = pd.DataFrame([[date.today(), "Gasto", cat, det, mon]], columns=["Fecha", "Tipo", "Categoría", "Detalle", "Monto"])
             df = pd.concat([df, new], ignore_index=True)
             df.to_csv(DB_FILE, index=False)
             st.toast(f"Registrado: {det}", icon="✅")
@@ -139,9 +163,8 @@ with tab_income:
         det = st.text_input("Origen del ingreso")
         mon = st.number_input("Monto ($)", min_value=0.0)
         if st.form_submit_button("AÑADIR A CARTERA"):
-            new = pd.DataFrame([[date.today(), "Ingreso", "Depósito", det, mon]], columns=df.columns[:5])
+            new = pd.DataFrame([[date.today(), "Ingreso", "Depósito", det, mon]], columns=["Fecha", "Tipo", "Categoría", "Detalle", "Monto"])
             df = pd.concat([df, new], ignore_index=True)
             df.to_csv(DB_FILE, index=False)
             st.toast("¡Dinero añadido!", icon="💰")
-            st.rerun()
             st.rerun()
