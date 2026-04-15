@@ -24,7 +24,7 @@ if "authenticated" not in st.session_state:
                 st.error("Acceso incorrecto")
     st.stop()
 
-# --- LÓGICA DE DATOS PERSISTENTES POR USUARIO ---
+# --- LÓGICA DE DATOS ---
 USER_ID = st.session_state.user
 DB_FILE = f"db_{USER_ID}.csv"
 CONFIG_FILE = f"settings_{USER_ID}.json"
@@ -37,7 +37,7 @@ def load_config():
 config_data = load_config()
 META_AHORRO = config_data["meta_ahorro"]
 
-# --- ESTILOS CSS (AURA + GLASSMORPHISM V1.2) ---
+# --- ESTILOS CSS CORREGIDOS (BARRA E ICONOS) ---
 st.markdown(f"""
 <style>
     .stApp {{
@@ -48,15 +48,9 @@ st.markdown(f"""
             radial-gradient(at 100% 100%, rgba(94, 0, 211, 0.3) 0px, transparent 55%),
             radial-gradient(at 0% 100%, rgba(0, 212, 255, 0.12) 0px, transparent 50%);
         background-attachment: fixed;
-        animation: aura-flow 25s ease infinite alternate;
     }}
 
-    @keyframes aura-flow {{
-        0% {{ background-size: 100% 100%; background-position: 0% 0%; }}
-        50% {{ background-size: 115% 115%; background-position: 50% 50%; }}
-        100% {{ background-size: 100% 100%; background-position: 100% 100%; }}
-    }}
-
+    /* TARJETAS GLASSMORPHISM */
     .card-resumen, .history-card, [data-testid="stForm"], .meta-container {{
         background: rgba(255, 255, 255, 0.03) !important;
         backdrop-filter: blur(35px) saturate(170%);
@@ -64,11 +58,9 @@ st.markdown(f"""
         padding: 25px;
         border: 1px solid rgba(255, 255, 255, 0.08) !important;
         margin-bottom: 20px;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
     }}
 
-    .history-card {{ border-left: 5px solid #D4FF00 !important; }}
-
+    /* BOTONES */
     .stButton > button {{
         width: 100%;
         border-radius: 18px !important;
@@ -76,22 +68,49 @@ st.markdown(f"""
         color: #000000 !important;
         font-weight: 800 !important;
         border: none !important;
-        padding: 14px 25px !important;
         box-shadow: 0 0 15px rgba(212, 255, 0, 0.2);
     }}
 
+    /* --- CORRECCIÓN DE LA BARRA DE MENÚ INFERIOR --- */
     .stTabs [data-baseweb="tab-list"] {{
-        position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-        width: 92%; max-width: 500px; z-index: 1000;
-        background: rgba(10, 0, 30, 0.85) !important;
-        backdrop-filter: blur(25px);
-        border-radius: 40px; padding: 10px 20px;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        position: fixed; 
+        bottom: 25px; 
+        left: 50%; 
+        transform: translateX(-50%);
+        width: 90%; 
+        max-width: 450px; 
+        z-index: 1000;
+        background: rgba(15, 5, 40, 0.9) !important;
+        backdrop-filter: blur(20px);
+        border-radius: 50px; 
+        padding: 5px 15px; /* Menos padding vertical para que no sobre barra */
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 65px; /* Altura fija para control proporcional */
     }}
-    .stTabs [data-baseweb="tab"] {{ font-size: 1.5rem; color: rgba(255,255,255,0.4) !important; }}
-    .stTabs [aria-selected="true"] {{ color: #D4FF00 !important; transform: scale(1.15); }}
 
-    .main .block-container {{ padding-bottom: 150px; }}
+    .stTabs [data-baseweb="tab"] {{
+        font-size: 2.2rem !important; /* Iconos mucho más grandes */
+        color: rgba(255,255,255,0.3) !important;
+        padding: 0px 15px !important;
+        border: none !important;
+        background: transparent !important;
+    }}
+
+    .stTabs [aria-selected="true"] {{
+        color: #D4FF00 !important;
+        transform: scale(1.2);
+        transition: transform 0.3s ease;
+    }}
+
+    /* Eliminar la línea roja/azul por defecto de Streamlit debajo de los tabs */
+    .stTabs [data-baseweb="tab-highlight"] {{
+        display: none !important;
+    }}
+
+    .main .block-container {{ padding-bottom: 120px; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -106,8 +125,8 @@ if not df.empty:
 
 balance = df[df["Tipo"] == "Ingreso"]["Monto"].sum() - df[df["Tipo"] == "Gasto"]["Monto"].sum() if not df.empty else 0
 
-# --- NAVEGACIÓN POR TABS ---
-t_h, t_c, t_s, t_g, t_i = st.tabs(["🏠", "⚙️", "🐷", "🛍️", "💼"])
+# --- NAVEGACIÓN ---
+t_h, t_c, t_s, t_g, t_i = st.tabs(["🏠", "⚙️", "🐷", "📊", "💼"])
 
 with t_h:
     st.markdown(f"### Hola, {USER_ID.upper()}")
@@ -126,75 +145,45 @@ with t_h:
     
     st.markdown("#### Actividad Reciente")
     if not df.empty:
-        recents = df[df['Detalle'].notna()].sort_values(by="Fecha", ascending=False).head(5)
+        recents = df.sort_values(by="Fecha", ascending=False).head(5)
         for _, r in recents.iterrows():
             st.markdown(f"<div class='history-card'><b>{r['Detalle']}</b><br><small>{r['Fecha']}</small> • <span style='color:#D4FF00;'>${r['Monto']:,.2f}</span></div>", unsafe_allow_html=True)
 
-# --- SECCIÓN METAS DE AHORRO (DISEÑO FLEX) ---
 with t_s:
-    st.header("🎯 Mi Meta de Ahorro")
-    
+    st.header("🎯 Meta de Ahorro")
     faltante = max(META_AHORRO - balance, 0.0)
     prog = min(max(balance / META_AHORRO, 0.0), 1.0) if META_AHORRO > 0 else 0
-    porcentaje = int(prog * 100)
-
-    if faltante > 0:
-        st.markdown(f"""
-            <div class="meta-container" style="text-align: center;">
-                <small style="opacity:0.6; letter-spacing: 1px;">TE FALTAN PARA TU OBJETIVO</small>
-                <h1 style="color:#FF4B4B; margin: 10px 0;">${faltante:,.2f}</h1>
-            </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown(f"""
-            <div class="meta-container" style="text-align: center; border: 1px solid #D4FF00;">
-                <h2 style="color:#D4FF00; margin: 0;">✨ ¡META ALCANZADA!</h2>
-                <p style="margin: 5px 0 0 0; opacity: 0.8;">Has superado tu objetivo de ahorro.</p>
-            </div>
-        """, unsafe_allow_html=True)
-
-    new_meta = st.number_input("Ajustar mi objetivo total ($)", value=float(META_AHORRO), step=100.0)
-    if new_meta != META_AHORRO:
-        with open(CONFIG_FILE, "w") as f: 
-            json.dump({"meta_ahorro": new_meta}, f)
-        st.rerun()
-
+    
     st.markdown(f"""
-        <div style="margin-top: 25px; padding: 10px;">
-            <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
-                <span style="font-weight:800; color:#D4FF00; font-size: 1.1rem;">{porcentaje}%</span>
-                <span style="opacity:0.6;">Goal: ${META_AHORRO:,.0f}</span>
-            </div>
-            <div style="width: 100%; background: rgba(255,255,255,0.07); border-radius: 30px; height: 26px; border: 1px solid rgba(255,255,255,0.1); overflow: hidden;">
-                <div style="width: {prog*100}%; 
-                            background: linear-gradient(90deg, #D4FF00, #A6FF00); 
-                            height: 100%; 
-                            box-shadow: 0 0 25px rgba(212, 255, 0, 0.4);
-                            transition: width 0.8s ease-in-out;">
-                </div>
-            </div>
+        <div class="meta-container" style="text-align: center;">
+            <small style="opacity:0.6;">FALTANTE</small>
+            <h1 style="color:#FF4B4B; margin: 5px 0;">${faltante:,.2f}</h1>
+        </div>
+        <div style="width: 100%; background: rgba(255,255,255,0.07); border-radius: 30px; height: 20px; margin: 20px 0; overflow: hidden;">
+            <div style="width: {prog*100}%; background: #D4FF00; height: 100%; box-shadow: 0 0 15px #D4FF00;"></div>
         </div>
     """, unsafe_allow_html=True)
-
-    if faltante > 0:
-        st.info(f"💡 Tip: Si ahorras $50 semanales adicionales, alcanzarás tu meta en {int(faltante/50) + 1} semanas.")
+    
+    new_meta = st.number_input("Objetivo Total ($)", value=float(META_AHORRO))
+    if new_meta != META_AHORRO:
+        with open(CONFIG_FILE, "w") as f: json.dump({"meta_ahorro": new_meta}, f)
+        st.rerun()
 
 with t_c:
     st.subheader("Configuración")
     if st.button("Cerrar Sesión"):
         del st.session_state.authenticated
         st.rerun()
-    st.divider()
-    st.markdown("#### Gestión de Datos")
+    st.markdown("#### Editor de Datos")
     ed_df = st.data_editor(df, num_rows="dynamic", use_container_width=True, hide_index=True)
     if st.button("Guardar Cambios"):
         ed_df.to_csv(DB_FILE, index=False)
-        st.success("Base de datos actualizada")
+        st.success("Datos actualizados")
 
 with t_g:
     st.header("Registrar Gasto")
     with st.form("fg", clear_on_submit=True):
-        cat = st.selectbox("Categoría", ["Servicios", "Mercado", "Deudas", "Ocio", "Varios"])
+        cat = st.selectbox("Categoría", ["Servicios", "Mercado", "Varios"])
         det = st.text_input("Descripción")
         mon = st.number_input("Monto ($)", min_value=0.0)
         if st.form_submit_button("REGISTRAR"):
@@ -204,15 +193,10 @@ with t_g:
 
 with t_i:
     st.header("Registrar Ingreso")
-    options = df[df["Tipo"] == "Ingreso"]["Detalle"].unique().tolist() if not df.empty else []
     with st.form("fi", clear_on_submit=True):
-        det_select = st.selectbox("Origen del Dinero", options=options, index=None, placeholder="Selecciona un origen frecuente...")
-        det_new = st.text_input("O escribe uno nuevo")
+        det = st.text_input("Origen")
         mon = st.number_input("Monto ($)", min_value=0.0)
-        if st.form_submit_button("CARGAR INGRESO"):
-            final_det = det_select if det_select else det_new
-            if final_det and mon > 0:
-                # CORRECCIÓN: Se cerró correctamente el paréntesis de pd.DataFrame
-                new = pd.DataFrame([[date.today(), "Ingreso", "Depósito", final_det, mon]], columns=df.columns)
-                pd.concat([df, new]).to_csv(DB_FILE, index=False)
-                st.rerun()
+        if st.form_submit_button("CARGAR"):
+            new = pd.DataFrame([[date.today(), "Ingreso", "Depósito", det, mon]], columns=df.columns)
+            pd.concat([df, new]).to_csv(DB_FILE, index=False)
+            st.rerun()
