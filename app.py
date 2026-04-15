@@ -32,24 +32,53 @@ ICONOS = {
 
 # --- SISTEMA DE SEGURIDAD ---
 if "authenticated" not in st.session_state:
-    st.markdown("<h2 style='text-align:center;'>👑 R.C Finanzas</h2>", unsafe_allow_html=True)
+    # Contenedor centrado para el login
+    st.markdown(f"""
+        <div style="text-align: center; padding: 20px 0;">
+            <h1 style="font-size: 3.5em; margin-bottom: 0;">👑</h1>
+            <h2 style="letter-spacing: 2px; margin-top: 10px;">R.C FINANZAS <span style="color:{accent_color};">PRO</span></h2>
+            <p style="color:{text_sec};">Inicia sesión para gestionar tu patrimonio</p>
+        </div>
+        
+        <style>
+            /* Estilo específico para el contenedor del formulario de login */
+            [data-testid="stForm"] {{
+                background: {bg_glass} !important;
+                backdrop-filter: blur(20px) !important;
+                border-radius: 30px !important;
+                border: 1px solid {border_glass} !important;
+                padding: 40px !important;
+                box-shadow: 0 15px 50px rgba(0,0,0,0.4) !important;
+            }}
+            /* Estilo de los inputs dentro del login */
+            input {{
+                border-radius: 15px !important;
+                background-color: rgba(255,255,255,0.05) !important;
+                border: 1px solid {border_glass} !important;
+                color: white !important;
+            }}
+        </style>
+    """, unsafe_allow_html=True)
+
+    # El formulario de login ahora heredará los estilos anteriores
     with st.form("Login"):
-        user = st.text_input("Usuario")
-        password = st.text_input("Contraseña", type="password")
-        if st.form_submit_button("Ingresar"):
+        col_user, col_pass = st.columns(2)
+        with col_user:
+            user = st.text_input("Usuario", placeholder="admin")
+        with col_pass:
+            password = st.text_input("Contraseña", type="password", placeholder="••••")
+            
+        submit = st.form_submit_button("DESBLOQUEAR ACCESO PANEL")
+        
+        if submit:
             if user == "admin" and password == "1234":
                 st.session_state["authenticated"] = True
+                st.toast("Acceso concedido. ¡Bienvenido!", icon="🔓")
                 st.rerun()
             else:
-                st.error("Error de acceso")
-    st.stop()
-
-# --- CARGA DE DATOS ---
-if os.path.exists(DB_FILE):
-    df = pd.read_csv(DB_FILE)
-    df['Fecha'] = pd.to_datetime(df['Fecha']).dt.date
-else:
-    df = pd.DataFrame(columns=["Fecha", "Tipo", "Categoría", "Detalle", "Monto"])
+                st.error("Credenciales incorrectas. Inténtalo de nuevo.")
+    
+    st.stop() # Detiene la ejecución hasta que se autentique
 
 # --- CÁLCULOS GLOBALES ---
 total_in = df[df["Tipo"] == "Ingreso"]["Monto"].sum() if not df.empty else 0
