@@ -75,11 +75,26 @@ tab_home, tab_stats, tab_expenses, tab_income = st.tabs(["🏠 Inicio", "📊 An
 
 # --- TAB 1: INICIO ---
 with tab_home:
-    st.markdown("<h2 style='text-align:center;'>RESUMEN GENERAL</h2>", unsafe_allow_html=True)
-    
-    total_in = df[df["Tipo"] == "Ingreso"]["Monto"].sum() if not df.empty else 0
-    total_out = df[df["Tipo"] == "Gasto"]["Monto"].sum() if not df.empty else 0
-    balance = total_in - total_out
+  balance_color = "#C69F40" if balance >= 0 else "#FF4B4B"
+
+st.markdown(f"""
+<div style="
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 20px;
+    padding: 30px;
+    border-top: 5px solid {balance_color};
+    text-align: center;
+    margin: 20px 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+">
+    <p style="color: #888; margin: 0; font-size: 0.9em; letter-spacing: 2px; font-weight: bold;">
+        BALANCE TOTAL DISPONIBLE
+    </p>
+    <h1 style="margin: 10px 0; font-size: 3.5em; color: white;">
+        ${balance:,.2f}
+    </h1>
+</div>
+""", unsafe_allow_html=True)
 
     # Métricas superiores
     c1, c2 = st.columns(2)
