@@ -123,7 +123,7 @@ if not df.empty:
         is_in = r['Tipo'] == "Ingreso"
         c = "#00ff88" if is_in else "#ff4b4b"
         s = "+" if is_in else "-"
-        st.markdown(f"""
+        st.markdown(f""")
 <div class="history-card">
 <div style="display:flex; justify-content:space-between; align-items:center;">
 <div>
