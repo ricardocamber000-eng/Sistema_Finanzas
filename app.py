@@ -22,7 +22,6 @@ st.markdown(f"""
 .main .block-container {{ background-color: rgba(0,0,0,0); }}
 [data-testid="stHeader"] {{ background: rgba(0,0,0,0); }}
 
-/* ICONO DORADO DEL SIDEBAR */
 button[kind="headerNoSpacing"] svg, 
 button[data-testid="sidebar-toggle"] svg {{
     fill: #C69F40 !important;
@@ -30,13 +29,11 @@ button[data-testid="sidebar-toggle"] svg {{
     height: 42px !important;
 }}
 
-/* SIDEBAR */
 [data-testid="stSidebar"] {{
     background-color: rgba(15, 18, 24, 0.98);
     border-right: 2px solid #C69F40;
 }}
 
-/* TARJETA SALDO */
 .main-balance {{
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(15px);
@@ -47,7 +44,6 @@ button[data-testid="sidebar-toggle"] svg {{
     margin-bottom: 30px;
 }}
 
-/* HISTORIAL */
 .history-card {{
     background: rgba(255, 255, 255, 0.03);
     border-radius: 12px;
@@ -56,7 +52,6 @@ button[data-testid="sidebar-toggle"] svg {{
     border-left: 5px solid #C69F40;
 }}
 
-/* BOTONES */
 .stButton>button {{
     background: linear-gradient(135deg, #C69F40, #8A6D2D);
     color: black !important;
@@ -79,12 +74,12 @@ else:
 
 saldo = df[df["Tipo"] == "Ingreso"]["Monto"].sum() - df[df["Tipo"] == "Gasto"]["Monto"].sum()
 
-# 5. SIDEBAR (LOGO CENTRADO Y NOMBRE)
+# 5. SIDEBAR (CORRECCIÓN DE COLUMNAS)
 with st.sidebar:
     if os.path.exists(LOGO_FILE):
-        # Usamos columnas para centrar el logo
-        col1, col2, col3 = st.columns()
-        with col2:
+        # Corregido: Pasamos la lista para definir proporciones
+        col_left, col_mid, col_right = st.columns()
+        with col_mid:
             st.image(LOGO_FILE, width=150)
             
     st.markdown("<h2 style='text-align:center; color:#C69F40 !important; margin-top:-10px;'>R.C FINANZAS</h2>", unsafe_allow_html=True)
@@ -111,7 +106,7 @@ with st.sidebar:
                 df.to_csv(DB_FILE, index=False)
                 st.rerun()
 
-# 6. FRONT
+# 6. FRONT PRINCIPAL
 st.markdown("<h3 style='text-align:center; opacity:0.5; letter-spacing:4px;'>R.C FINANZAS</h3>", unsafe_allow_html=True)
 
 st.markdown(f"""
@@ -138,6 +133,4 @@ if not df.empty:
 <div style="color:{c}; font-weight:bold; font-size:1.3em;">{s}${r['Monto']:,.2f}</div>
 </div>
 </div>
-""", unsafe_allow_html=True)
-else:
-    st.info("Abre el menú dorado para registrar datos.")
+""", unsafe_
