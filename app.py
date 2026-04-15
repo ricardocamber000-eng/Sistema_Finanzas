@@ -140,4 +140,4 @@ with st.form("form_gastos"):
 st.subheader("Movimientos Recientes")
 if not df.empty:
     # Mostramos los últimos 10 movimientos
-    df_sorted = df.sort_values(by="Fecha", ascending=False).head(10
+    df_sorted = df.sort_values(by="Fecha", ascending=False).head(10)
