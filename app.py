@@ -87,4 +87,4 @@ with st.sidebar:
     
     with st.form("form_registro", clear_on_submit=True):
         if "Gasto" in reg_tipo:
-            cat = st.selectbox("Categoría", ["Deudas", "Servicios",
+            cat = st.selectbox("Categoría", ["Deudas", "Servicios",]
