@@ -11,7 +11,7 @@ BG_IMAGE = "9313.jpg"
 LOGO_FILE = "Logo_RC.png"
 DB_FILE = "wallet_database.csv"
 
-# 3. CSS (Doble llave {{ }} para evitar SyntaxError con f-strings)
+# 3. CSS (Doble llave {{ }} para evitar SyntaxError)
 st.markdown(f"""
 <style>
     .stApp {{
@@ -71,7 +71,7 @@ saldo_actual = total_in - total_out
 
 # 5. SIDEBAR
 with st.sidebar:
-    # CORRECCIÓN LÍNEA 76: Se añade para definir las columnas
+    # CORRECCIÓN CLAVE: Agregamos para que la función no esté vacía
     if os.path.exists(LOGO_FILE):
         c_l, c_m, c_r = st.columns()
         with c_m:
@@ -84,7 +84,7 @@ with st.sidebar:
     
     with t_g:
         cat = st.selectbox("Categoría", ["Deudas", "Servicios", "Mercado", "Varios"])
-        with st.form("f_gasto"):
+        with st.form("f_g"):
             det = st.text_input("Concepto")
             mon = st.number_input("Monto ($)", min_value=0.0)
             if st.form_submit_button("REGISTRAR GASTO"):
@@ -94,7 +94,7 @@ with st.sidebar:
                 st.rerun()
                 
     with t_i:
-        with st.form("f_ingreso"):
+        with st.form("f_i"):
             ori = st.text_input("Origen")
             mon_i = st.number_input("Monto ($) ", min_value=0.0)
             if st.form_submit_button("AÑADIR A SALDO"):
