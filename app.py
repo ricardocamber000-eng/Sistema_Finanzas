@@ -78,7 +78,7 @@ else:
     df = pd.DataFrame(columns=["Fecha", "Tipo", "Categoría", "Detalle", "Monto"])
 
 saldo = df[df["Tipo"] == "Ingreso"]["Monto"].sum() - df[df["Tipo"] == "Gasto"]["Monto"].sum()
-
+st.image(LOGO_FILE, width=150) # Prueba con 150 o 200 hasta que te guste
 # 5. SIDEBAR
 with st.sidebar:
     if os.path.exists(LOGO_FILE):
