@@ -4,17 +4,16 @@ from datetime import date
 import os
 import plotly.express as px
 
-# 1. CONFIGURACIÓN (Debe ser lo primero)
+# 1. CONFIGURACIÓN E IDENTIDAD
 st.set_page_config(page_title="R.C Finanzas", page_icon="👑", layout="centered")
 
-# 2. RUTAS DE ARCHIVOS
 DB_FILE = "wallet_database.csv"
 LOGO_FILE = "Logo_RC.png"
 
-# 3. CSS DE ALTA ESPECIFICIDAD (Identidad Visual R.C Finanzas)
+# 2. CSS DE ALTA ESPECIFICIDAD (DISEÑO BLINDADO)
 st.markdown("""
 <style>
-    /* Fondo Azul Oscuro Profundo */
+    /* Fondo Global Azul Oscuro de la Referencia */
     .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"] {
         background-color: #0E1117 !important;
         background-image: none !important;
@@ -26,15 +25,15 @@ st.markdown("""
         border-right: 3px solid #C69F40 !important;
     }
 
-    /* Tarjetas de Historial (Estilo de la imagen de referencia) */
+    /* Tarjetas de Historial (Efecto Cristal con Borde Dorado Izquierdo) */
     .history-card {
         background: rgba(255, 255, 255, 0.04) !important;
         border: 1px solid rgba(255, 255, 255, 0.05) !important;
         border-left: 6px solid #C69F40 !important;
         border-radius: 12px !important;
         padding: 20px !important;
-        margin-bottom: 15px !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important;
+        margin-bottom: 12px !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
     }
 
     /* Contenedor de Saldo Principal */
@@ -54,24 +53,25 @@ st.markdown("""
         border: none !important;
         font-weight: bold !important;
         border-radius: 10px !important;
+        height: 3em !important;
         width: 100% !important;
     }
 
-    /* Textos en Blanco */
+    /* Forzar textos en Blanco */
     h1, h2, h3, p, span, label, .stMarkdown {
         color: #FFFFFF !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# 4. GESTIÓN DE DATOS
+# 3. GESTIÓN DE DATOS (LA LÓGICA QUE FALTABA)
 if os.path.exists(DB_FILE):
     df = pd.read_csv(DB_FILE)
     df['Fecha'] = pd.to_datetime(df['Fecha']).dt.date
 else:
     df = pd.DataFrame(columns=["Fecha", "Tipo", "Categoría", "Detalle", "Monto"])
 
-# 5. SIDEBAR (NAVEGACIÓN Y REGISTRO)
+# 4. SIDEBAR (NAVEGACIÓN Y REGISTRO)
 with st.sidebar:
     if os.path.exists(LOGO_FILE):
         st.image(LOGO_FILE, width=150)
@@ -81,16 +81,10 @@ with st.sidebar:
     seccion = st.selectbox("Navegación", ["🏠 Inicio", "📊 Análisis"])
     st.write("---")
     
+    # Formulario de registro completo con todas las variables
     st.subheader("Nuevo Movimiento")
     reg_tipo = st.radio("Tipo", ["📉 Gasto", "📈 Ingreso"])
     
-    with st.form("form_registro"):
+    with st.form("form_registro", clear_on_submit=True):
         if "Gasto" in reg_tipo:
-            cat = st.selectbox("Categoría", ["Deudas", "Servicios", "Mercado", "Varios"])
-            det = st.text_input("Concepto")
-            mon = st.number_input("Monto ($)", min_value=0.0, step=0.01)
-            tipo_final = "Gasto"
-        else:
-            cat = "Depósito"
-            det = st.text_input("Origen")
-            mon = st.number_
+            cat = st.selectbox("Categoría", ["Deudas", "Servicios",
