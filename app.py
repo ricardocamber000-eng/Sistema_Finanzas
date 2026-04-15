@@ -7,16 +7,46 @@ import plotly.express as px
 # 1. CONFIGURACIÓN
 st.set_page_config(page_title="R.C Finanzas", page_icon="👑", layout="centered")
 
+# --- SISTEMA DE AUTENTICACIÓN ---
+def check_password():
+    """Retorna True si el usuario ingresó credenciales correctas."""
+    def login_form():
+        with st.form("Login"):
+            st.markdown("<h3 style='text-align:center;'>Control de Acceso</h3>", unsafe_allow_html=True)
+            user = st.text_input("Usuario")
+            password = st.text_input("Contraseña", type="password")
+            submit = st.form_submit_button("Entrar")
+            
+            # Credenciales (puedes cambiarlas aquí)
+            if submit:
+                if user == "admin" and password == "1234":
+                    st.session_state["authenticated"] = True
+                    st.rerun()
+                else:
+                    st.error("Usuario o contraseña incorrectos")
+
+    if "authenticated" not in st.session_state:
+        login_form()
+        return False
+    return True
+
+# Si el usuario no está autenticado, detener la ejecución aquí
+if not check_password():
+    st.stop()
+
+# --- BOTÓN DE LOGOUT (Opcional) ---
+with st.sidebar:
+    if st.button("Cerrar Sesión"):
+        del st.session_state["authenticated"]
+        st.rerun()
+
 # 2. PARÁMETROS
 DB_FILE = "wallet_database.csv"
 
-# 3. ESTILOS CSS (Personalización de la Barra Inferior)
+# 3. ESTILOS CSS
 st.markdown("""
 <style>
-    /* Fondo General */
     .stApp { background-color: #0E1117 !important; }
-
-    /* Estilizar las TABS para que parezcan una barra de menú inferior */
     .stTabs [data-baseweb="tab-list"] {
         position: fixed;
         bottom: 0;
@@ -29,8 +59,6 @@ st.markdown("""
         padding: 10px 0;
         z-index: 1000;
     }
-
-    /* Estilo de cada pestaña */
     .stTabs [data-baseweb="tab"] {
         color: #888 !important;
         background: transparent !important;
@@ -38,17 +66,11 @@ st.markdown("""
         flex-grow: 1;
         text-align: center;
     }
-
-    /* Pestaña activa (Dorado) */
     .stTabs [aria-selected="true"] {
         color: #C69F40 !important;
         font-weight: bold !important;
     }
-
-    /* Ocultar el margen inferior predeterminado para que no tape el contenido */
     .main .block-container { padding-bottom: 100px; }
-
-    /* Tarjetas de Historial (Estilo anterior mantenido) */
     .history-card {
         background: rgba(255, 255, 255, 0.04);
         border: 1px solid rgba(255, 255, 255, 0.05);
@@ -57,8 +79,6 @@ st.markdown("""
         margin-bottom: 15px;
         border-left: 6px solid #C69F40;
     }
-
-    /* Balance Central */
     .main-balance {
         background: linear-gradient(135deg, rgba(198, 159, 64, 0.1), rgba(0,0,0,0.6));
         border: 1px solid #C69F40;
