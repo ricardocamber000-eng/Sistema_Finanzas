@@ -111,7 +111,6 @@ t_h, t_c, t_s, t_g, t_i = st.tabs(["🏠", "⚙️", "🐷", "🛍️", "💼"])
 
 with t_h:
     st.markdown(f"### Hola, {USER_ID.upper()}")
-    # Usamos HTML para asegurar que el diseño sea responsivo sin st.columns
     st.markdown(f"""
         <div style="display: flex; gap: 15px; margin-bottom: 20px;">
             <div class="card-resumen" style="flex: 1; margin-bottom: 0;">
@@ -131,16 +130,14 @@ with t_h:
         for _, r in recents.iterrows():
             st.markdown(f"<div class='history-card'><b>{r['Detalle']}</b><br><small>{r['Fecha']}</small> • <span style='color:#D4FF00;'>${r['Monto']:,.2f}</span></div>", unsafe_allow_html=True)
 
-# --- SECCIÓN METAS DE AHORRO (SIN ST.COLUMNS) ---
+# --- SECCIÓN METAS DE AHORRO (DISEÑO FLEX) ---
 with t_s:
     st.header("🎯 Mi Meta de Ahorro")
     
-    # Cálculos previos
     faltante = max(META_AHORRO - balance, 0.0)
     prog = min(max(balance / META_AHORRO, 0.0), 1.0) if META_AHORRO > 0 else 0
     porcentaje = int(prog * 100)
 
-    # Bloque de información superior
     if faltante > 0:
         st.markdown(f"""
             <div class="meta-container" style="text-align: center;">
@@ -156,14 +153,12 @@ with t_s:
             </div>
         """, unsafe_allow_html=True)
 
-    # Input de ajuste de meta
     new_meta = st.number_input("Ajustar mi objetivo total ($)", value=float(META_AHORRO), step=100.0)
     if new_meta != META_AHORRO:
         with open(CONFIG_FILE, "w") as f: 
             json.dump({"meta_ahorro": new_meta}, f)
         st.rerun()
 
-    # Barra de progreso visual
     st.markdown(f"""
         <div style="margin-top: 25px; padding: 10px;">
             <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
@@ -217,4 +212,7 @@ with t_i:
         if st.form_submit_button("CARGAR INGRESO"):
             final_det = det_select if det_select else det_new
             if final_det and mon > 0:
-                new = pd.DataFrame([[date.today(), "Ingreso", "Depósito", final_det, mon]], columns=df
+                # CORRECCIÓN: Se cerró correctamente el paréntesis de pd.DataFrame
+                new = pd.DataFrame([[date.today(), "Ingreso", "Depósito", final_det, mon]], columns=df.columns)
+                pd.concat([df, new]).to_csv(DB_FILE, index=False)
+                st.rerun()
