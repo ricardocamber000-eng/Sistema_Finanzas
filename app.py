@@ -9,14 +9,14 @@ from streamlit_lottie import st_lottie
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="R.C Finanzas Pro", page_icon="👑", layout="centered")
 
-# --- CONTROL DE USUARIOS (NUEVO) ---
+# --- CONTROL DE USUARIOS ---
 USUARIOS = {
     "admin": "1234",
     "roberto": "5555",
     "invitado": "0000"
 }
 
-# --- LÓGICA DE LOGIN (BLOQUEANTE) ---
+# --- LÓGICA DE LOGIN ---
 if "authenticated" not in st.session_state:
     st.markdown("<div style='text-align:center; padding:50px 0;'><h1>👑</h1><h2 style='letter-spacing:5px;'>R.C FINANZAS</h2><p style='opacity:0.5;'>Control de Acceso</p></div>", unsafe_allow_html=True)
     with st.form("Login"):
@@ -31,7 +31,7 @@ if "authenticated" not in st.session_state:
                 st.error("Acceso incorrecto")
     st.stop()
 
-# --- ARCHIVOS Y PERSISTENCIA (AHORA POR USUARIO) ---
+# --- ARCHIVOS Y PERSISTENCIA POR USUARIO ---
 USER_ID = st.session_state.user
 DB_FILE = f"db_{USER_ID}.csv"
 CONFIG_FILE = f"settings_{USER_ID}.json"
@@ -76,16 +76,11 @@ else:
     accent_gradient = "linear-gradient(90deg, #D4FF00 0%, #A6FF00 100%)"
     shadow_style = "0 20px 50px rgba(0,0,0,0.3)"
 
-# --- ESTILOS CSS REFINADOS (V1 ORIGINAL) ---
+# --- ESTILOS CSS REFINADOS ---
 st.markdown(f"""
 <style>
-    .stApp {{
-        background: {bg_gradient} !important;
-        color: {text_main};
-    }}
-    
+    .stApp {{ background: {bg_gradient} !important; color: {text_main}; }}
     h1, h2, h3, h4, p, span, label {{ color: {text_main} !important; }}
-    
     .card-resumen, .history-card {{
         background: {card_bg} !important; 
         backdrop-filter: blur(25px) saturate(180%);
@@ -96,12 +91,7 @@ st.markdown(f"""
         margin-bottom: 22px;
         box-shadow: {shadow_style};
     }}
-    
-    .history-card {{ 
-        border-left: 4px solid {accent} !important;
-        background: rgba(255,255,255,0.03) !important;
-    }}
-    
+    .history-card {{ border-left: 4px solid {accent} !important; background: rgba(255,255,255,0.03) !important; }}
     .stTabs [data-baseweb="tab-list"] {{
         position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
         width: 90%; max-width: 500px; z-index: 1000;
@@ -111,10 +101,8 @@ st.markdown(f"""
         padding: 10px 20px;
         border: 1px solid rgba(255,255,255,0.1) !important;
     }}
-    
     .stTabs [data-baseweb="tab"] {{ color: rgba(255,255,255,0.5) !important; font-size: 0.8em; }}
     .stTabs [aria-selected="true"] {{ color: {accent} !important; font-weight: bold; }}
-
     .stButton > button {{
         border-radius: 50px !important; 
         background: {accent_gradient} !important; 
@@ -124,7 +112,6 @@ st.markdown(f"""
         padding: 12px 0;
         box-shadow: 0 10px 20px rgba(212, 255, 0, 0.2);
     }}
-
     .main .block-container {{ padding-bottom: 150px; }}
 </style>
 """, unsafe_allow_html=True)
@@ -139,8 +126,8 @@ else:
 balance = df[df["Tipo"] == "Ingreso"]["Monto"].sum() - df[df["Tipo"] == "Gasto"]["Monto"].sum() if not df.empty else 0
 goal_reached = balance >= META_AHORRO
 
-# --- CABECERA DE USUARIO ---
-st.markdown(f"<div style='text-align:right;'><small style='opacity:0.5;'>Usuario: </small><b>{USER_ID.upper()}</b></div>", unsafe_allow_html=True)
+# --- CABECERA ---
+st.markdown(f"<div style='text-align:right;'><small style='opacity:0.5;'>Sesión activa: </small><b>{USER_ID.upper()}</b></div>", unsafe_allow_html=True)
 
 # --- NAVEGACIÓN ---
 t_h, t_c, t_s, t_g, t_i = st.tabs(["🏠", "⚙️", "🐷", "🛍️", "💼"])
@@ -216,6 +203,3 @@ with t_i:
             new = pd.DataFrame([[date.today(), "Ingreso", "Depósito", det, mon]], columns=df.columns)
             pd.concat([df, new]).to_csv(DB_FILE, index=False)
             st.rerun()
-
-# --- LÓGICA DE COLORES Y DEGRADADOS (ESTILO V1) ---
-if st.session_state.
