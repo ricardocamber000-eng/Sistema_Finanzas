@@ -10,7 +10,7 @@ st.set_page_config(page_title="R.C Finanzas", page_icon="👑", layout="centered
 BG_IMAGE = "9313.jpg"
 LOGO_FILE = "Logo_RC.png"
 
-# 3. CSS MAESTRO
+# 3. CSS (Separado para evitar errores de sintaxis)
 st.markdown(f"""
 <style>
 .stApp {{
@@ -26,7 +26,6 @@ button[kind="headerNoSpacing"] svg,
 button[data-testid="sidebar-toggle"] svg {{
     fill: #C69F40 !important;
     width: 42px !important;
-    height: 42px !important;
 }}
 
 [data-testid="stSidebar"] {{
@@ -72,14 +71,17 @@ if os.path.exists(DB_FILE):
 else:
     df = pd.DataFrame(columns=["Fecha", "Tipo", "Categoría", "Detalle", "Monto"])
 
-saldo = df[df["Tipo"] == "Ingreso"]["Monto"].sum() - df[df["Tipo"] == "Gasto"]["Monto"].sum()
+# Cálculo de Saldo (Protección contra archivos vacíos)
+if not df.empty:
+    saldo = df[df["Tipo"] == "Ingreso"]["Monto"].sum() - df[df["Tipo"] == "Gasto"]["Monto"].sum()
+else:
+    saldo = 0.0
 
-# 5. SIDEBAR (CORRECCIÓN DE COLUMNAS)
+# 5. SIDEBAR
 with st.sidebar:
     if os.path.exists(LOGO_FILE):
-        # Corregido: Pasamos la lista para definir proporciones
-        col_left, col_mid, col_right = st.columns()
-        with col_mid:
+        c1, c2, c3 = st.columns()
+        with c2:
             st.image(LOGO_FILE, width=150)
             
     st.markdown("<h2 style='text-align:center; color:#C69F40 !important; margin-top:-10px;'>R.C FINANZAS</h2>", unsafe_allow_html=True)
@@ -107,30 +109,4 @@ with st.sidebar:
                 st.rerun()
 
 # 6. FRONT PRINCIPAL
-st.markdown("<h3 style='text-align:center; opacity:0.5; letter-spacing:4px;'>R.C FINANZAS</h3>", unsafe_allow_html=True)
-
-st.markdown(f"""
-<div class="main-balance">
-<p style="margin:0; color:#C69F40 !important; font-weight:bold; letter-spacing:2px;">SALDO DISPONIBLE</p>
-<h1 style="margin:0; font-size:4.5em;">${saldo:,.2f}</h1>
-</div>
-""", unsafe_allow_html=True)
-
-st.subheader("Movimientos Recientes")
-if not df.empty:
-    df_s = df.sort_values(by="Fecha", ascending=False).head(10)
-    for _, r in df_s.iterrows():
-        is_in = r['Tipo'] == "Ingreso"
-        c = "#00ff88" if is_in else "#ff4b4b"
-        s = "+" if is_in else "-"
-        st.markdown(f""")
-<div class="history-card">
-<div style="display:flex; justify-content:space-between; align-items:center;">
-<div>
-<div style="font-weight:bold;">{r['Detalle']}</div>
-<div style="font-size:0.8em; opacity:0.5;">{r['Categoría']} • {r['Fecha']}</div>
-</div>
-<div style="color:{c}; font-weight:bold; font-size:1.3em;">{s}${r['Monto']:,.2f}</div>
-</div>
-</div>
-""", unsafe_
+st.markdown("
