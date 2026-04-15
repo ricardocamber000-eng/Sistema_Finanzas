@@ -15,7 +15,7 @@ st.markdown(f"""
     <style>
     /* Fondo con la imagen texturizada */
     .stApp {{
-        background-image: url("{BG_IMAGE_URL}");
+        background-image: url("{https://raw.githubusercontent.com/TU_USUARIO/TU_REPO/main/9313.jpg}");
         background-size: cover;
         background-attachment: fixed;
     }}
