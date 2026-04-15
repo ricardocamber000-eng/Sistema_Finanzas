@@ -111,5 +111,3 @@ if not df.empty:
             """, unsafe_allow_html=True)
 else:
     st.info("No hay movimientos registrados.")
-        st.info("No hay historial disponible.")
-    st.markdown('</div>', unsafe_allow_html=True)
