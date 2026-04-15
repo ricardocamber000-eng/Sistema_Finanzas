@@ -5,7 +5,7 @@ import os
 
 # 1. CONFIGURACIÓN INICIAL (Debe ser la primera instrucción)
 st.set_page_config(
-    page_title="WalletPro: Gold Edition", 
+    page_title="R.C Finanzas: Gold Edition", 
     page_icon="💰", 
     layout="centered"
 )
