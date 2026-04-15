@@ -37,7 +37,7 @@ def load_config():
 config_data = load_config()
 META_AHORRO = config_data["meta_ahorro"]
 
-# --- ESTILOS CSS CORREGIDOS ---
+# --- ESTILOS CSS (BARRA CON BOTÓN DE APAGADO) ---
 st.markdown(f"""
 <style>
     .stApp {{
@@ -61,7 +61,7 @@ st.markdown(f"""
 
     .history-card {{ border-left: 5px solid #D4FF00 !important; }}
 
-    /* BARRA INFERIOR AJUSTADA */
+    /* BARRA INFERIOR INTEGRADA */
     .stTabs [data-baseweb="tab-list"] {{
         position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
         width: 95%; max-width: 480px; z-index: 1000;
@@ -81,7 +81,7 @@ st.markdown(f"""
 
     .stTabs [aria-selected="true"] {{ color: #D4FF00 !important; transform: scale(1.1); }}
     
-    /* Icono de apagado en rojo */
+    /* Icono de apagado final */
     .stTabs [data-baseweb="tab"]:last-child {{ color: #FF4B4B !important; }}
 
     .stTabs [data-baseweb="tab-highlight"] {{ display: none !important; }}
@@ -89,10 +89,10 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-# --- PROCESAMIENTO DE DATOS ---
+# --- PROCESAMIENTO Y LIMPIEZA DE DATOS ---
 if os.path.exists(DB_FILE):
     df = pd.read_csv(DB_FILE)
-    # Limpieza crítica para evitar el error de NaT/NaN
+    # Limpieza: eliminar filas sin monto y asegurar que sea numérico
     df = df.dropna(subset=['Monto'])
     df['Monto'] = pd.to_numeric(df['Monto'], errors='coerce').fillna(0.0)
 else:
@@ -123,7 +123,7 @@ with t_h:
     
     st.markdown("#### Actividad Reciente")
     if not df.empty:
-        # Filtrar solo registros válidos para mostrar
+        # Filtrar solo registros válidos para evitar errores de renderizado
         recents = df[df['Monto'] > 0].sort_values(by="Fecha", ascending=False).head(5)
         for _, r in recents.iterrows():
             st.markdown(f"<div class='history-card'><b>{r['Detalle']}</b><br><small>{r['Fecha']}</small> • <span style='color:#D4FF00;'>${r['Monto']:,.2f}</span></div>", unsafe_allow_html=True)
@@ -147,11 +147,11 @@ with t_s:
         st.rerun()
 
 with t_c:
-    st.subheader("⚙️ Base de Datos")
+    st.subheader("⚙️ Gestión de Base de Datos")
     ed_df = st.data_editor(df, num_rows="dynamic", use_container_width=True, hide_index=True)
-    if st.button("Sincronizar Cambios"):
+    if st.button("Guardar Cambios"):
         ed_df.to_csv(DB_FILE, index=False)
-        st.success("Datos guardados")
+        st.success("Cambios sincronizados correctamente")
 
 with t_g:
     st.header("🛍️ Registrar Gasto")
@@ -159,7 +159,7 @@ with t_g:
         cat = st.selectbox("Categoría", ["Servicios", "Mercado", "Varios"])
         det = st.text_input("Detalle")
         mon = st.number_input("Monto ($)", min_value=0.0)
-        if st.form_submit_button("GUARDAR GASTO"):
+        if st.form_submit_button("REGISTRAR"):
             new = pd.DataFrame([[date.today(), "Gasto", cat, det, mon]], columns=df.columns)
             pd.concat([df, new]).to_csv(DB_FILE, index=False)
             st.rerun()
@@ -169,10 +169,15 @@ with t_i:
     with st.form("fi", clear_on_submit=True):
         det = st.text_input("Origen")
         mon = st.number_input("Monto ($)", min_value=0.0)
-        if st.form_submit_button("CARGAR INGRESO"):
+        if st.form_submit_button("CARGAR"):
             new = pd.DataFrame([[date.today(), "Ingreso", "Depósito", det, mon]], columns=df.columns)
             pd.concat([df, new]).to_csv(DB_FILE, index=False)
             st.rerun()
+
+# --- LÓGICA DE APAGADO (SESIÓN) ---
+with t_quit:
+    st.session_state.clear()
+    st.rerun()
 
 with t_quit:
     st.session_state.clear()
