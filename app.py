@@ -35,6 +35,7 @@ if "authenticated" not in st.session_state:
 USER_ID = st.session_state.user
 DB_FILE = f"db_{USER_ID}.csv"
 CONFIG_FILE = f"settings_{USER_ID}.json"
+OLD_DB = "wallet_database.csv" # Archivo original a migrar
 
 if "theme" not in st.session_state:
     st.session_state.theme = "Oscuro"
@@ -116,18 +117,28 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-# --- CARGA DE DATOS ---
+# --- SISTEMA DE IMPORTACIÓN INTELIGENTE ---
 if os.path.exists(DB_FILE):
+    # Caso 1: El usuario ya tiene su propio archivo
     df = pd.read_csv(DB_FILE)
-    df['Fecha'] = pd.to_datetime(df['Fecha']).dt.date
+elif os.path.exists(OLD_DB):
+    # Caso 2: El usuario no tiene archivo, pero existe el archivo original global
+    df = pd.read_csv(OLD_DB)
+    df.to_csv(DB_FILE, index=False) # Migramos los datos al nuevo archivo del usuario
+    st.toast(f"✅ Datos migrados con éxito a la cuenta de {USER_ID.upper()}")
 else:
+    # Caso 3: No hay datos previos en ningún lado
     df = pd.DataFrame(columns=["Fecha", "Tipo", "Categoría", "Detalle", "Monto"])
+
+# Asegurar formato de fecha
+if not df.empty:
+    df['Fecha'] = pd.to_datetime(df['Fecha']).dt.date
 
 balance = df[df["Tipo"] == "Ingreso"]["Monto"].sum() - df[df["Tipo"] == "Gasto"]["Monto"].sum() if not df.empty else 0
 goal_reached = balance >= META_AHORRO
 
 # --- CABECERA ---
-st.markdown(f"<div style='text-align:right;'><small style='opacity:0.5;'>Sesión activa: </small><b>{USER_ID.upper()}</b></div>", unsafe_allow_html=True)
+st.markdown(f"<div style='text-align:right;'><small style='opacity:0.5;'>Sesión: </small><b>{USER_ID.upper()}</b></div>", unsafe_allow_html=True)
 
 # --- NAVEGACIÓN ---
 t_h, t_c, t_s, t_g, t_i = st.tabs(["🏠", "⚙️", "🐷", "🛍️", "💼"])
