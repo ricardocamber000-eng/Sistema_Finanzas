@@ -10,7 +10,7 @@ st.set_page_config(page_title="R.C Finanzas", page_icon="👑", layout="centered
 BG_IMAGE = "9313.jpg"
 LOGO_FILE = "Logo_RC.png"
 
-# 3. CSS MAESTRO (Sin sangrías peligrosas)
+# 3. CSS MAESTRO
 st.markdown(f"""
 <style>
 .stApp {{
@@ -22,7 +22,7 @@ st.markdown(f"""
 .main .block-container {{ background-color: rgba(0,0,0,0); }}
 [data-testid="stHeader"] {{ background: rgba(0,0,0,0); }}
 
-/* ICONO DORADO */
+/* ICONO DORADO DEL SIDEBAR */
 button[kind="headerNoSpacing"] svg, 
 button[data-testid="sidebar-toggle"] svg {{
     fill: #C69F40 !important;
@@ -78,13 +78,18 @@ else:
     df = pd.DataFrame(columns=["Fecha", "Tipo", "Categoría", "Detalle", "Monto"])
 
 saldo = df[df["Tipo"] == "Ingreso"]["Monto"].sum() - df[df["Tipo"] == "Gasto"]["Monto"].sum()
-st.image(LOGO_FILE, width=150) # Prueba con 150 o 200 hasta que te guste
-# 5. SIDEBAR
+
+# 5. SIDEBAR (LOGO CENTRADO Y NOMBRE)
 with st.sidebar:
     if os.path.exists(LOGO_FILE):
-        st.image(LOGO_FILE, use_container_width=True)
-    st.markdown("<h2 style='text-align:center; color:#C69F40 !important;'>R.C FINANZAS</h2>", unsafe_allow_html=True)
+        # Usamos columnas para centrar el logo
+        col1, col2, col3 = st.columns()
+        with col2:
+            st.image(LOGO_FILE, width=150)
+            
+    st.markdown("<h2 style='text-align:center; color:#C69F40 !important; margin-top:-10px;'>R.C FINANZAS</h2>", unsafe_allow_html=True)
     st.write("---")
+    
     t1, t2 = st.tabs(["📉 Gasto", "📈 Ingreso"])
     with t1:
         cat = st.selectbox("Categoría", ["Deudas", "Servicios", "Mercado", "Varios"])
