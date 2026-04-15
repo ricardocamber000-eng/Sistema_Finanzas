@@ -10,8 +10,8 @@ st.set_page_config(page_title="R.C Finanzas", page_icon="👑", layout="centered
 BG_IMAGE = "9313.jpg"
 LOGO_FILE = "Logo_RC.png"
 
-# 3. CSS (Separado para evitar errores de sintaxis)
-st.markdown(f"""
+# 3. CSS (Definido en una variable limpia para evitar errores de sintaxis)
+ESTILO_CSS = f"""
 <style>
 .stApp {{
     background-image: url("app/static/{BG_IMAGE}");
@@ -61,9 +61,11 @@ button[data-testid="sidebar-toggle"] svg {{
 
 h1, h2, h3, p, label, span {{ color: white !important; }}
 </style>
-""", unsafe_allow_html=True)
+"""
 
-# 4. DATOS
+st.markdown(ESTILO_CSS, unsafe_allow_html=True)
+
+# 4. GESTIÓN DE DATOS
 DB_FILE = "wallet_database.csv"
 if os.path.exists(DB_FILE):
     df = pd.read_csv(DB_FILE)
@@ -71,11 +73,10 @@ if os.path.exists(DB_FILE):
 else:
     df = pd.DataFrame(columns=["Fecha", "Tipo", "Categoría", "Detalle", "Monto"])
 
-# Cálculo de Saldo (Protección contra archivos vacíos)
-if not df.empty:
-    saldo = df[df["Tipo"] == "Ingreso"]["Monto"].sum() - df[df["Tipo"] == "Gasto"]["Monto"].sum()
-else:
-    saldo = 0.0
+# Cálculo de Saldo
+total_in = df[df["Tipo"] == "Ingreso"]["Monto"].sum() if not df.empty else 0
+total_out = df[df["Tipo"] == "Gasto"]["Monto"].sum() if not df.empty else 0
+saldo = total_in - total_out
 
 # 5. SIDEBAR
 with st.sidebar:
@@ -108,5 +109,38 @@ with st.sidebar:
                 df.to_csv(DB_FILE, index=False)
                 st.rerun()
 
-# 6. FRONT PRINCIPAL
-st.markdown("
+# 6. CUERPO PRINCIPAL
+st.markdown("<h3 style='text-align:center; opacity:0.5; letter-spacing:4px;'>R.C FINANZAS</h3>", unsafe_allow_html=True)
+
+# Widget Saldo
+st.markdown(f"""
+<div class="main-balance">
+    <p style="margin:0; color:#C69F40 !important; font-weight:bold; letter-spacing:2px;">SALDO DISPONIBLE</p>
+    <h1 style="margin:0; font-size:4.5em;">${saldo:,.2f}</h1>
+</div>
+""", unsafe_allow_html=True)
+
+st.subheader("Movimientos Recientes")
+
+if not df.empty:
+    df_sorted = df.sort_values(by="Fecha", ascending=False).head(10)
+    for index, row in df_sorted.iterrows():
+        is_ingreso = row['Tipo'] == "Ingreso"
+        color_text = "#00ff88" if is_ingreso else "#ff4b4b"
+        prefix = "+" if is_ingreso else "-"
+        
+        st.markdown(f"""
+        <div class="history-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <div style="font-weight:bold; font-size:1.1em; color:white;">{row['Detalle']}</div>
+                    <div style="font-size:0.8em; opacity:0.5; color:white;">{row['Categoría']} • {row['Fecha']}</div>
+                </div>
+                <div style="color:{color_text}; font-weight:bold; font-size:1.3em;">
+                    {prefix}${row['Monto']:,.2f}
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+else:
+    st.info("No hay movimientos. Usa el menú dorado.")
