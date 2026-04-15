@@ -10,29 +10,7 @@ st.set_page_config(page_title="R.C Finanzas Pro", page_icon="👑", layout="cent
 # --- CONTROL DE ACCESO MEJORADO (V1.3) ---
 USUARIOS = {"admin": "1234", "roberto": "5555", "invitado": "0000"}
 
-# Inyectamos el estilo específico para el login antes de verificar la sesión
-st.markdown("""
-<style>
-    /* Contenedor de Login centrado */
-    .login-box {
-        background: rgba(255, 255, 255, 0.03) !important;
-        backdrop-filter: blur(20px);
-        padding: 40px;
-        border-radius: 30px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        text-align: center;
-    }
-    .stTextInput > div > div > input {
-        background-color: rgba(255, 255, 255, 0.05) !important;
-        color: white !important;
-        border-radius: 12px !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    }
-</style>
-""", unsafe_allow_html=True)
-
 if "authenticated" not in st.session_state:
-    # Contenedor visual de bienvenida
     st.markdown("""
         <div style='text-align:center; padding:30px 0;'>
             <h1 style='font-size: 60px; margin-bottom:0;'>👑</h1>
@@ -41,28 +19,22 @@ if "authenticated" not in st.session_state:
         </div>
     """, unsafe_allow_html=True)
 
-    # Columnas para centrar el formulario
+    # CORRECCIÓN AQUÍ: Agregamos la lista para definir las proporciones
     col1, col2, col3 = st.columns()
     
     with col2:
         with st.form("Login"):
             u = st.text_input("Usuario", placeholder="ej. roberto").lower().strip()
             p = st.text_input("PIN", type="password", placeholder="****")
-            
-            # Botón con lógica de validación
-            submit = st.form_submit_button("INICIAR SESIÓN")
+            submit = st.form_submit_button("ENTRAR")
             
             if submit:
                 if u in USUARIOS and USUARIOS[u] == p:
                     st.session_state.authenticated = True
                     st.session_state.user = u
-                    st.success(f"Bienvenido, {u.title()}")
                     st.rerun()
                 else:
-                    st.error("Credenciales incorrectas")
-    
-    # Footer informativo en el login
-    st.markdown("<p style='text-align:center; opacity:0.3; font-size:12px; margin-top:50px;'>© 2026 R.C Pro - Encriptación de Sesión Activa</p>", unsafe_allow_html=True)
+                    st.error("Acceso incorrecto")
     st.stop()
 
 # --- LÓGICA DE DATOS PERSISTENTES POR USUARIO (V1.2) ---
