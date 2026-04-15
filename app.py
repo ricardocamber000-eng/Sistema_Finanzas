@@ -25,7 +25,7 @@ def load_config():
 config_data = load_config()
 META_AHORRO = config_data["meta_ahorro"]
 
-# --- DICCIONARIO DE CATEGORÍAS (RESTURADO) ---
+# --- DICCIONARIO DE CATEGORÍAS ---
 ICONOS = {
     "Servicios": "💡", 
     "Mercado": "🛒", 
@@ -60,7 +60,6 @@ st.markdown(f"""
         color: {text_main};
     }}
     
-    /* Tarjetas sin bordes rígidos */
     .card-resumen, .history-card {{
         background: {card_bg} !important; 
         backdrop-filter: blur(20px) saturate(180%);
@@ -71,7 +70,6 @@ st.markdown(f"""
         box-shadow: {shadow_style};
     }}
     
-    /* Barra de Navegación Ajustada (Iconos Grandes) */
     .stTabs [data-baseweb="tab-list"] {{
         position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
         width: 92%; max-width: 480px; z-index: 1000;
@@ -85,7 +83,7 @@ st.markdown(f"""
     
     .stTabs [data-baseweb="tab"] {{ 
         color: rgba(255,255,255,0.4) !important; 
-        font-size: 1.8rem !important; /* Tamaño aumentado */
+        font-size: 1.8rem !important; 
         padding: 10px 5px !important;
     }}
     
@@ -95,7 +93,6 @@ st.markdown(f"""
         transition: all 0.3s ease;
     }}
 
-    /* Botones con degradado neón */
     .stButton > button {{
         border-radius: 50px !important; 
         background: {accent_gradient} !important; 
@@ -114,12 +111,14 @@ st.markdown(f"""
 if "authenticated" not in st.session_state:
     st.markdown("<div style='text-align:center; padding-top:60px;'><h1>👑</h1><h2 style='letter-spacing:5px;'>R.C FINANZAS</h2></div>", unsafe_allow_html=True)
     with st.form("Login"):
-        u, p = st.text_input("Admin"), st.text_input("PIN", type="password")
+        u = st.text_input("Admin")
+        p = st.text_input("PIN", type="password")
         if st.form_submit_button("ACCEDER"):
             if u == "admin" and p == "1234":
                 st.session_state.authenticated = True
                 st.rerun()
-            else: st.error("Acceso denegado")
+            else:
+                st.error("Acceso denegado")
     st.stop()
 
 # --- CARGA DE DATOS ---
@@ -154,7 +153,8 @@ with t_s:
     st.header("Metas 🐷")
     m_input = st.number_input("Objetivo ($)", value=float(META_AHORRO))
     if m_input != META_AHORRO:
-        with open(CONFIG_FILE, "w") as f: json.dump({"meta_ahorro": m_input}, f)
+        with open(CONFIG_FILE, "w") as f:
+            json.dump({"meta_ahorro": m_input}, f)
         st.rerun()
 
     prog = min(max(balance / m_input, 0.0), 1.0) if m_input > 0 else 0
@@ -174,11 +174,11 @@ with t_c:
     if st.button("Guardar Cambios"):
         ed_df.to_csv(DB_FILE, index=False)
         st.success("Sincronizado")
+        st.rerun()
 
 with t_g:
     st.header("Nuevo Gasto 🛍️")
     with st.form("fg", clear_on_submit=True):
         cat = st.selectbox("Categoría", list(ICONOS.keys()))
         det = st.text_input("Descripción")
-        mon = st.number_input("Monto", min_value=0.0)
-        if st.form
+        mon = st.number_input("M
