@@ -7,20 +7,10 @@ import plotly.express as px
 # 1. CONFIGURACIÓN
 st.set_page_config(page_title="R.C Finanzas", page_icon="👑", layout="centered")
 
-# 2. PARÁMETROS Y CARGA DE DATOS
+# 2. PARÁMETROS
 DB_FILE = "wallet_database.csv"
 
-def load_data():
-    if os.path.exists(DB_FILE):
-        df = pd.read_csv(DB_FILE)
-        df['Fecha'] = pd.to_datetime(df['Fecha']).dt.date
-        df['Monto'] = pd.to_numeric(df['Monto'])
-        return df
-    return pd.DataFrame(columns=["Fecha", "Tipo", "Categoría", "Detalle", "Monto"])
-
-df = load_data()
-
-# 3. ESTILOS CSS
+# 3. ESTILOS CSS (Tu diseño original intacto)
 st.markdown("""
 <style>
     .stApp { background-color: #0E1117 !important; }
@@ -63,53 +53,17 @@ st.markdown("""
         border-radius: 30px;
         text-align: center;
         margin-top: 20px;
-        margin-bottom: 20px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# 5. ESTRUCTURA DE NAVEGACIÓN
-tab_home, tab_stats, tab_expenses, tab_income = st.tabs(["🏠 Inicio", "📊 Análisis", "🛍️ Gastos", "💼 Ingresos"])
+# 4. CARGA DE DATOS (Mejorada para evitar errores de tipo)
+if os.path.exists(DB_FILE):
+    df = pd.read_csv(DB_FILE)
+    df['Fecha'] = pd.to_datetime(df['Fecha']).dt.date
+    df['Monto'] = pd.to_numeric(df['Monto'], errors='coerce').fillna(0)
+else:
+    df = pd.DataFrame(columns=["Fecha", "Tipo", "Categoría", "Detalle", "Monto"])
 
-# --- TAB 1: INICIO ---
-with tab_home:
-    st.markdown("<h2 style='text-align:center;'>R.C FINANZAS</h2>", unsafe_allow_html=True)
-    
-    total_in = df[df["Tipo"] == "Ingreso"]["Monto"].sum() if not df.empty else 0
-    total_out = df[df["Tipo"] == "Gasto"]["Monto"].sum() if not df.empty else 0
-    balance = total_in - total_out
-
-    col1, col2 = st.columns(2)
-    col1.metric("Total Ingresos", f"${total_in:,.2f}")
-    col2.metric("Total Gastos", f"${total_out:,.2f}", delta=f"-{total_out:,.2f}", delta_color="inverse")
-
-    st.markdown(f"""
-    <div class="main-balance">
-        <p style="color:#C69F40; font-weight:bold; letter-spacing:2px;">SALDO DISPONIBLE</p>
-        <h1 style="font-size:4em; margin:0; color:white;">${balance:,.2f}</h1>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.subheader("Historial Reciente")
-    if not df.empty:
-        for i, r in df.sort_values(by="Fecha", ascending=False).head(8).iterrows():
-            color = "#00FF9D" if r['Tipo'] == "Ingreso" else "#FF4B4B"
-            st.markdown(f"""
-            <div class="history-card">
-                <div style="display:flex; justify-content:space-between;">
-                    <div><b>{r['Detalle']}</b><br><small>{r['Categoría']} | {r['Fecha']}</small></div>
-                    <div style="color:{color}; font-size:1.2em; font-weight:bold;">${r['Monto']:,.2f}</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-    else:
-        st.info("Aún no hay movimientos registrados.")
-
-# --- TAB 2: ANÁLISIS ---
-with tab_stats:
-    st.header("Análisis de Finanzas")
-    
-    if not df.empty:
-        # 1. Gráfico de Tendencia (Evolución)
-        st.subheader("Evolución Temporal")
-        df_trend = df.groupby(['Fecha', 'Tipo'])['Monto'].sum().reset_index
+# 5. ESTRUCTURA DE NAVEGACIÓN (TABS ORIGINALES)
+tab_home, tab_stats, tab_expenses, tab_income = st.tabs(["🏠 Inicio", "
