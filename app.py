@@ -15,7 +15,7 @@ DB_FILE = "wallet_database.csv"
 st.markdown(f"""
 <style>
     .stApp {{
-        background-image: url("app/static/{BG_IMAGE}");
+        background-image: url("app/static/{https://github.com/ricardocamber000-eng/Sistema_Finanzas/blob/main/9313.jpg?raw=true}");
         background-size: cover;
         background-attachment: fixed;
         background-color: #0F1218;
