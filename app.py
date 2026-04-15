@@ -7,34 +7,36 @@ import json
 # 1. CONFIGURACIÓN E IDENTIDAD
 st.set_page_config(page_title="R.C Finanzas Pro", page_icon="👑", layout="centered")
 
-# --- CONTROL DE ACCESO MEJORADO (V1.3) ---
+# --- CONTROL DE ACCESO (V1.2) ---
+
 USUARIOS = {"admin": "1234", "roberto": "5555", "invitado": "0000"}
 
-if "authenticated" not in st.session_state:
-    st.markdown("""
-        <div style='text-align:center; padding:30px 0;'>
-            <h1 style='font-size: 60px; margin-bottom:0;'>👑</h1>
-            <h2 style='letter-spacing: 2px; color: #D4FF00;'>R.C FINANZAS</h2>
-            <p style='opacity:0.6; font-weight:300;'>Premium Financial Control</p>
-        </div>
-    """, unsafe_allow_html=True)
 
-    # CORRECCIÓN AQUÍ: Agregamos la lista para definir las proporciones
-    col1, col2, col3 = st.columns()
-    
-    with col2:
-        with st.form("Login"):
-            u = st.text_input("Usuario", placeholder="ej. roberto").lower().strip()
-            p = st.text_input("PIN", type="password", placeholder="****")
-            submit = st.form_submit_button("ENTRAR")
-            
-            if submit:
-                if u in USUARIOS and USUARIOS[u] == p:
-                    st.session_state.authenticated = True
-                    st.session_state.user = u
-                    st.rerun()
-                else:
-                    st.error("Acceso incorrecto")
+
+if "authenticated" not in st.session_state:
+
+    st.markdown("<div style='text-align:center; padding:50px 0;'><h1>👑</h1><h2>R.C FINANZAS</h2><p style='opacity:0.5;'>V1.2 Premium</p></div>", unsafe_allow_html=True)
+
+    with st.form("Login"):
+
+        u = st.text_input("Usuario").lower().strip()
+
+        p = st.text_input("PIN", type="password")
+
+        if st.form_submit_button("ENTRAR"):
+
+            if u in USUARIOS and USUARIOS[u] == p:
+
+                st.session_state.authenticated = True
+
+                st.session_state.user = u
+
+                st.rerun()
+
+            else: 
+
+                st.error("Acceso incorrecto")
+
     st.stop()
 
 # --- LÓGICA DE DATOS PERSISTENTES POR USUARIO (V1.2) ---
