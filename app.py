@@ -12,7 +12,7 @@ BG_IMAGE = "9313.jpg"
 LOGO_FILE = "Logo_RC.png"
 DB_FILE = "wallet_database.csv"
 
-# 3. CSS (Estilos unificados)
+# 3. CSS (Verificado: Cierres de comillas triples correctos)
 st.markdown(f"""
 <style>
     .stApp {{
@@ -21,7 +21,10 @@ st.markdown(f"""
         background-attachment: fixed;
         background-color: #0F1218;
     }}
-    [data-testid="stSidebar"] {{ background-color: rgba(15, 18, 24, 0.98); border-right: 2px solid #C69F40; }}
+    [data-testid="stSidebar"] {{ 
+        background-color: rgba(15, 18, 24, 0.98); 
+        border-right: 2px solid #C69F40; 
+    }}
     .main-balance {{
         background: rgba(255, 255, 255, 0.05);
         backdrop-filter: blur(15px);
@@ -56,11 +59,9 @@ with st.sidebar:
     st.markdown("<h2 style='text-align:center; color:#C69F40 !important;'>R.C FINANZAS</h2>", unsafe_allow_html=True)
     
     st.write("---")
-    # MENÚ DE NAVEGACIÓN
     seccion = st.selectbox("Ir a:", ["🏠 Inicio", "📊 Análisis Interactivo"])
     st.write("---")
     
-    # REGISTRO DE DATOS
     opcion = st.radio("Nuevo Registro", ["📉 Gasto", "📈 Ingreso"])
     with st.form("registro"):
         if "Gasto" in opcion:
@@ -81,13 +82,17 @@ with st.sidebar:
             st.rerun()
 
 # 6. LÓGICA DE SECCIONES
-
 if seccion == "🏠 Inicio":
     total_in = df[df["Tipo"] == "Ingreso"]["Monto"].sum() if not df.empty else 0
     total_out = df[df["Tipo"] == "Gasto"]["Monto"].sum() if not df.empty else 0
     saldo = total_in - total_out
 
-    st.markdown(f'<div class="main-balance"><p style="color:#C69F40 !important; font-weight:bold;">SALDO DISPONIBLE</p><h1 style="font-size:3.5em;">${saldo:,.2f}</h1></div>', unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="main-balance">
+        <p style="color:#C69F40 !important; font-weight:bold; letter-spacing:2px;">SALDO DISPONIBLE</p>
+        <h1 style="font-size:3.5em;">${saldo:,.2f}</h1>
+    </div>
+    """, unsafe_allow_html=True)
     
     st.subheader("Movimientos Recientes")
     if not df.empty:
@@ -108,38 +113,27 @@ elif seccion == "📊 Análisis Interactivo":
     st.title("Panel de Análisis")
     
     if not df.empty:
-        # Pestañas internas para diferentes tipos de gráficos
-        tab1, tab2 = st.tabs(["Gastos por Categoría", "Histórico de Gastos"])
-        
+        t1, t2 = st.tabs(["Distribución de Gastos", "Evolución Temporal"])
         df_gastos = df[df["Tipo"] == "Gasto"]
         
-        with tab1:
+        with t1:
             if not df_gastos.empty:
                 fig_pie = px.pie(
                     df_gastos, values='Monto', names='Categoría',
-                    hole=0.4, title="Distribución de Gastos",
+                    hole=0.4, title="Gastos por Categoría",
                     color_discrete_sequence=px.colors.sequential.Gold
                 )
                 fig_pie.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color="white")
                 st.plotly_chart(fig_pie, use_container_width=True)
             else:
-                st.warning("No hay gastos registrados para analizar.")
+                st.warning("Registra gastos para ver el análisis.")
                 
-        with tab2:
+        with t2:
             if not df_gastos.empty:
-                # Agrupamos por fecha para ver evolución
                 df_time = df_gastos.groupby("Fecha")["Monto"].sum().reset_index()
-                fig_line = px.line(
-                    df_time, x="Fecha", y="Monto", 
-                    title="Tendencia de Gastos en el Tiempo",
-                    line_shape="spline", markers=True
-                )
+                fig_line = px.line(df_time, x="Fecha", y="Monto", title="Gastos Diarios")
                 fig_line.update_traces(line_color='#C69F40')
                 fig_line.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
                 st.plotly_chart(fig_line, use_container_width=True)
     else:
-        st.info("Agrega datos para generar los gráficos interactivos.")
-        </div>
-        """, unsafe_allow_html=True)
-else:
-    st.info("No hay datos registrados.")
+        st.info("No hay datos para analizar.")
