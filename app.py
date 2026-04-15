@@ -37,7 +37,7 @@ def load_config():
 config_data = load_config()
 META_AHORRO = config_data["meta_ahorro"]
 
-# --- ESTILOS CSS (CON BARRA DE 6 ICONOS) ---
+# --- ESTILOS CSS CORREGIDOS ---
 st.markdown(f"""
 <style>
     .stApp {{
@@ -59,54 +59,30 @@ st.markdown(f"""
         margin-bottom: 20px;
     }}
 
-    .stButton > button {{
-        width: 100%;
-        border-radius: 18px !important;
-        background: #D4FF00 !important;
-        color: #000000 !important;
-        font-weight: 800 !important;
-        border: none !important;
-    }}
+    .history-card {{ border-left: 5px solid #D4FF00 !important; }}
 
-    /* BARRA INFERIOR AJUSTADA PARA 6 ELEMENTOS */
+    /* BARRA INFERIOR AJUSTADA */
     .stTabs [data-baseweb="tab-list"] {{
-        position: fixed; 
-        bottom: 25px; 
-        left: 50%; 
-        transform: translateX(-50%);
-        width: 95%; 
-        max-width: 500px; 
-        z-index: 1000;
-        background: rgba(15, 5, 40, 0.9) !important;
+        position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+        width: 95%; max-width: 480px; z-index: 1000;
+        background: rgba(15, 5, 40, 0.95) !important;
         backdrop-filter: blur(20px);
-        border-radius: 50px; 
-        padding: 5px 10px;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        height: 70px;
+        border-radius: 40px; padding: 0 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        height: 70px; display: flex; align-items: center; justify-content: space-around;
     }}
 
     .stTabs [data-baseweb="tab"] {{
-        font-size: 1.8rem !important; 
-        color: rgba(255,255,255,0.3) !important;
-        padding: 0px !important;
-        border: none !important;
+        font-size: 1.8rem !important;
+        color: rgba(255,255,255,0.4) !important;
         background: transparent !important;
-        flex-grow: 1;
-        text-align: center;
+        border: none !important;
     }}
 
-    .stTabs [aria-selected="true"] {{
-        color: #D4FF00 !important;
-        transform: scale(1.2);
-    }}
-
-    /* Estilo especial para el último tab (Apagado) */
-    .stTabs [data-baseweb="tab"]:last-child {{
-        color: #FF4B4B !important;
-    }}
+    .stTabs [aria-selected="true"] {{ color: #D4FF00 !important; transform: scale(1.1); }}
+    
+    /* Icono de apagado en rojo */
+    .stTabs [data-baseweb="tab"]:last-child {{ color: #FF4B4B !important; }}
 
     .stTabs [data-baseweb="tab-highlight"] {{ display: none !important; }}
     .main .block-container {{ padding-bottom: 120px; }}
@@ -116,6 +92,9 @@ st.markdown(f"""
 # --- PROCESAMIENTO DE DATOS ---
 if os.path.exists(DB_FILE):
     df = pd.read_csv(DB_FILE)
+    # Limpieza crítica para evitar el error de NaT/NaN
+    df = df.dropna(subset=['Monto'])
+    df['Monto'] = pd.to_numeric(df['Monto'], errors='coerce').fillna(0.0)
 else:
     df = pd.DataFrame(columns=["Fecha", "Tipo", "Categoría", "Detalle", "Monto"])
 
@@ -124,8 +103,7 @@ if not df.empty:
 
 balance = df[df["Tipo"] == "Ingreso"]["Monto"].sum() - df[df["Tipo"] == "Gasto"]["Monto"].sum() if not df.empty else 0
 
-# --- NAVEGACIÓN (6 TABS) ---
-# Se añade el icono de apagado al final
+# --- NAVEGACIÓN ---
 t_h, t_c, t_s, t_g, t_i, t_quit = st.tabs(["🏠", "⚙️", "🐷", "📊", "💼", "🔘"])
 
 with t_h:
@@ -145,7 +123,8 @@ with t_h:
     
     st.markdown("#### Actividad Reciente")
     if not df.empty:
-        recents = df.sort_values(by="Fecha", ascending=False).head(5)
+        # Filtrar solo registros válidos para mostrar
+        recents = df[df['Monto'] > 0].sort_values(by="Fecha", ascending=False).head(5)
         for _, r in recents.iterrows():
             st.markdown(f"<div class='history-card'><b>{r['Detalle']}</b><br><small>{r['Fecha']}</small> • <span style='color:#D4FF00;'>${r['Monto']:,.2f}</span></div>", unsafe_allow_html=True)
 
@@ -158,48 +137,43 @@ with t_s:
             <small style="opacity:0.6;">FALTANTE</small>
             <h1 style="color:#FF4B4B; margin: 5px 0;">${faltante:,.2f}</h1>
         </div>
-        <div style="width: 100%; background: rgba(255,255,255,0.07); border-radius: 30px; height: 20px; margin: 20px 0; overflow: hidden;">
+        <div style="width: 100%; background: rgba(255,255,255,0.07); border-radius: 30px; height: 18px; margin: 20px 0; overflow: hidden;">
             <div style="width: {prog*100}%; background: #D4FF00; height: 100%;"></div>
         </div>
     """, unsafe_allow_html=True)
-    new_meta = st.number_input("Objetivo Total ($)", value=float(META_AHORRO))
-    if new_meta != META_AHORRO:
-        with open(CONFIG_FILE, "w") as f: json.dump({"meta_ahorro": new_meta}, f)
+    m = st.number_input("Ajustar Meta ($)", value=float(META_AHORRO))
+    if m != META_AHORRO:
+        with open(CONFIG_FILE, "w") as f: json.dump({"meta_ahorro": m}, f)
         st.rerun()
 
 with t_c:
-    st.subheader("Gestión de Datos")
-    st.info("Utiliza esta sección para editar o corregir registros pasados.")
+    st.subheader("⚙️ Base de Datos")
     ed_df = st.data_editor(df, num_rows="dynamic", use_container_width=True, hide_index=True)
-    if st.button("Guardar Cambios"):
+    if st.button("Sincronizar Cambios"):
         ed_df.to_csv(DB_FILE, index=False)
-        st.success("Base de datos sincronizada")
+        st.success("Datos guardados")
 
 with t_g:
-    st.header("Registrar Gasto")
+    st.header("🛍️ Registrar Gasto")
     with st.form("fg", clear_on_submit=True):
         cat = st.selectbox("Categoría", ["Servicios", "Mercado", "Varios"])
-        det = st.text_input("Descripción")
+        det = st.text_input("Detalle")
         mon = st.number_input("Monto ($)", min_value=0.0)
-        if st.form_submit_button("REGISTRAR"):
+        if st.form_submit_button("GUARDAR GASTO"):
             new = pd.DataFrame([[date.today(), "Gasto", cat, det, mon]], columns=df.columns)
             pd.concat([df, new]).to_csv(DB_FILE, index=False)
             st.rerun()
 
 with t_i:
-    st.header("Registrar Ingreso")
+    st.header("💼 Registrar Ingreso")
     with st.form("fi", clear_on_submit=True):
         det = st.text_input("Origen")
         mon = st.number_input("Monto ($)", min_value=0.0)
-        if st.form_submit_button("CARGAR"):
+        if st.form_submit_button("CARGAR INGRESO"):
             new = pd.DataFrame([[date.today(), "Ingreso", "Depósito", det, mon]], columns=df.columns)
             pd.concat([df, new]).to_csv(DB_FILE, index=False)
             st.rerun()
 
-# --- LÓGICA DE CIERRE DE SESIÓN (TAB DE APAGADO) ---
 with t_quit:
-    st.subheader("Cerrando sesión...")
-    # Limpiamos el estado de autenticación
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
+    st.session_state.clear()
     st.rerun()
