@@ -4,10 +4,10 @@ from datetime import date
 import os
 import plotly.express as px
 
-# 1. CONFIGURACIÓN DE PÁGINA (Sin cambios)
+# 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="R.C Finanzas Pro", page_icon="👑", layout="centered")
 
-# --- PARÁMETROS Y DICCIONARIOS (Sin cambios) ---
+# --- PARÁMETROS Y DICCIONARIOS ---
 DB_FILE = "wallet_database.csv"
 META_AHORRO = 3000.0
 ICONOS = {
@@ -20,7 +20,7 @@ ICONOS = {
     "Varios": "📦"
 }
 
-# --- SISTEMA DE SEGURIDAD (Sin cambios) ---
+# --- SISTEMA DE SEGURIDAD ---
 def check_password():
     if "authenticated" not in st.session_state:
         st.markdown("<h2 style='text-align:center;'>👑 R.C Finanzas</h2>", unsafe_allow_html=True)
@@ -40,65 +40,68 @@ def check_password():
 if not check_password():
     st.stop()
 
-# --- CARGA DE DATOS (Sin cambios) ---
+# --- CARGA DE DATOS ---
 if os.path.exists(DB_FILE):
     df = pd.read_csv(DB_FILE)
     df['Fecha'] = pd.to_datetime(df['Fecha']).dt.date
 else:
     df = pd.DataFrame(columns=["Fecha", "Tipo", "Categoría", "Detalle", "Monto"])
 
-# --- CÁLCULOS GLOBALES (Sin cambios) ---
+# --- CÁLCULOS GLOBALES ---
 total_in = df[df["Tipo"] == "Ingreso"]["Monto"].sum() if not df.empty else 0
 total_out = df[df["Tipo"] == "Gasto"]["Monto"].sum() if not df.empty else 0
 balance = total_in - total_out
 
-# --- ESTILOS CSS (MEJORADOS PARA BARRA FLOTANTE BLANCA) ---
+# --- ESTILOS CSS (BARRA BLANCA FLOTANTE PREMIUM) ---
 st.markdown("""
 <style>
-    /* Fondo General (Sin cambios) */
+    /* Fondo General */
     .stApp { background-color: #0E1117 !important; }
 
-    /* Estilizar las TABS para que PAREZCAN una barra de menú flotante */
+    /* Barra de Menú Flotante Blanca */
     .stTabs [data-baseweb="tab-list"] {
         position: fixed; 
-        bottom: 20px;          /* Separación del borde inferior */
-        left: 20px;            /* Separación del borde izquierdo */
-        right: 20px;           /* Separación del borde derecho */
-        width: auto;           /* Ancho automático basado en los bordes laterales */
-        z-index: 1000;         /* Asegurar que esté sobre todo */
+        bottom: 25px; 
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%; 
+        max-width: 500px;
+        z-index: 1000;
         
-        background-color: white !important; /* Color de fondo blanco */
-        border: none !important;           /* Eliminar bordes predeterminados */
-        border-radius: 20px;               /* Esquinas redondeadas para el efecto flotante */
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3); /* Sombra para dar profundidad y efecto flotante */
-        
-        display: flex; 
-        justify-content: space-around; 
-        padding: 10px 0;
+        background-color: #FFFFFF !important; 
+        border-radius: 30px; 
+        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        padding: 10px 15px;
+        display: flex;
+        justify-content: space-around;
+        border: none !important;
     }
 
-    /* Estilo de cada pestaña */
+    /* Quitar la línea inferior naranja por defecto de Streamlit */
+    .stTabs [data-baseweb="tab-highlight"] {
+        background-color: transparent !important;
+    }
+
+    /* Estilo de los items del menú */
     .stTabs [data-baseweb="tab"] {
-        color: black !important;      /* Texto negro sobre fondo blanco */
-        background: transparent !important; 
-        border: none !important; 
-        flex-grow: 1; 
-        text-align: center;
-        transition: color 0.3s ease; /* Transición suave para el color */
+        background-color: transparent !important;
+        border: none !important;
+        color: #666666 !important;
+        flex-direction: column;
+        gap: 0px;
+        transition: all 0.3s ease;
     }
 
-    /* Pestaña activa (Dorado sobre blanco) */
+    /* Item seleccionado: Letra más grande y color dorado */
     .stTabs [aria-selected="true"] {
-        color: #C69F40 !important;    /* Color dorado para la pestaña activa */
-        font-weight: bold !important;
+        color: #C69F40 !important;
+        transform: scale(1.1);
     }
 
-    /* Ajustar el margen inferior del contenido principal */
-    .main .block-container { 
-        padding-bottom: 130px; /* Incrementar ligeramente para asegurar espacio para la barra flotante */
-    }
+    /* Ajuste para que el contenido no quede debajo de la barra */
+    .main .block-container { padding-bottom: 150px; }
 
-    /* Tarjetas de Historial (Sin cambios) */
+    /* Tarjetas de historial */
     .history-card {
         background: rgba(255, 255, 255, 0.04); border-radius: 12px;
         padding: 15px; margin-bottom: 10px; border-left: 5px solid #C69F40;
@@ -106,8 +109,15 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- NAVEGACIÓN (Sin cambios) ---
-tab_home, tab_stats, tab_savings, tab_expenses, tab_income = st.tabs(["🏠 Inicio", "📊 Análisis", "🐷 Ahorro", "🛍️ Gastos", "💼 Ingresos"])
+# --- NAVEGACIÓN CON ICONOS DINÁMICOS ---
+# Usamos saltos de línea en el nombre para que el icono quede arriba del texto (en móviles se ve genial)
+tab_home, tab_stats, tab_savings, tab_expenses, tab_income = st.tabs([
+    "🏠\nInicio", 
+    "📊\nStats", 
+    "🐷\nAhorro", 
+    "🛍️\nGasto", 
+    "💼\nIngreso"
+])
 
 with tab_home:
     st.markdown("<h2 style='text-align:center;'>MI BILLETERA</h2>", unsafe_allow_html=True)
@@ -150,24 +160,32 @@ with tab_stats:
 
 with tab_savings:
     st.header("Meta de Ahorro 🐷")
-    progreso_porcentaje = min(max(balance / META_AHORRO, 0.0), 1.0)
+    
+    # Progreso
+    progreso = min(max(balance / META_AHORRO, 0.0), 1.0)
+    porcentaje_texto = int(progreso * 100)
+    
     st.markdown(f"""
-    <div style="background: rgba(255, 255, 255, 0.03); border-radius: 15px; padding: 20px; border: 1px solid #C69F40;">
-        <h3 style="margin-top:0;">Objetivo: Libertad Financiera</h3>
-        <p style="color:#888;">Progreso actual basado en tu balance disponible.</p>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-            <span><b>${balance:,.2f}</b> ahorrados</span>
-            <span>Meta: <b>${META_AHORRO:,.2f}</b></span>
+    <div style="background: rgba(255, 255, 255, 0.03); border-radius: 20px; padding: 25px; border: 1px solid #C69F40; text-align: center;">
+        <h2 style="color: #C69F40; margin-bottom: 5px;">{porcentaje_texto}% completado</h2>
+        <p style="color: #888;">Meta: <b>${META_AHORRO:,.2f}</b></p>
+        <div style="font-size: 4em; margin: 20px 0;">{"💰" if progreso < 1 else "👑"}</div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.9em; color: #888;">
+            <span>$0</span>
+            <span>${balance:,.2f} actual</span>
+            <span>${META_AHORRO:,.2f}</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
-    st.progress(progreso_porcentaje)
-    faltante = max(META_AHORRO - balance, 0)
-    if faltante > 0:
-        st.info(f"Te faltan **${faltante:,.2f}** para alcanzar tu meta. ¡Sigue así!")
+    
+    st.progress(progreso)
+    
+    if balance < META_AHORRO:
+        faltante = META_AHORRO - balance
+        st.info(f"Faltan **${faltante:,.2f}** para tu objetivo. ¡Tú puedes!")
     else:
         st.balloons()
-        st.success("¡Felicidades! Has alcanzado tu meta de ahorro.")
+        st.success("¡META LOGRADA! Eres un maestro del ahorro.")
 
 with tab_expenses:
     st.header("Registrar Gasto 🛍️")
