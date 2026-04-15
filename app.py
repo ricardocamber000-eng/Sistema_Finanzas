@@ -37,99 +37,60 @@ def load_config():
 config_data = load_config()
 META_AHORRO = config_data["meta_ahorro"]
 
-# --- ESTILOS CSS (AURA + GLASSMORPHISM V1.2) ---
+# --- ESTILOS CSS (AJUSTE DE BARRA DE MENÚ) ---
 st.markdown(f"""
 <style>
-    .stApp {{
-        background-color: #08001A !important;
-        background-image: 
-            radial-gradient(at 0% 0%, rgba(45, 0, 102, 0.4) 0px, transparent 55%), 
-            radial-gradient(at 100% 0%, rgba(212, 255, 0, 0.08) 0px, transparent 50%), 
-            radial-gradient(at 100% 100%, rgba(94, 0, 211, 0.3) 0px, transparent 55%),
-            radial-gradient(at 0% 100%, rgba(0, 212, 255, 0.12) 0px, transparent 50%);
-        background-attachment: fixed;
-        animation: aura-flow 25s ease infinite alternate;
-    }}
-
-    @keyframes aura-flow {{
-        0% {{ background-size: 100% 100%; background-position: 0% 0%; }}
-        50% {{ background-size: 115% 115%; background-position: 50% 50%; }}
-        100% {{ background-size: 100% 100%; background-position: 100% 100%; }}
-    }}
-
-    .card-resumen, .history-card, [data-testid="stForm"], .meta-container {{
-        background: rgba(255, 255, 255, 0.03) !important;
-        backdrop-filter: blur(35px) saturate(170%);
-        border-radius: 28px;
-        padding: 25px;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        margin-bottom: 20px;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-    }}
-
-    .history-card {{ border-left: 5px solid #D4FF00 !important; }}
-
-    .stButton > button {{
-        width: 100%;
-        border-radius: 18px !important;
-        background: #D4FF00 !important;
-        color: #000000 !important;
-        font-weight: 800 !important;
-        border: none !important;
-        padding: 14px 25px !important;
-        box-shadow: 0 0 15px rgba(212, 255, 0, 0.2);
-    }}
-
+    /* 1. Ajuste del contenedor de la barra */
     .stTabs [data-baseweb="tab-list"] {{
-        position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-        width: 92%; max-width: 500px; z-index: 1000;
-        background: rgba(10, 0, 30, 0.85) !important;
-        backdrop-filter: blur(25px);
-        border-radius: 40px; padding: 10px 20px;
+        position: fixed; 
+        bottom: 20px; 
+        left: 50%; 
+        transform: translateX(-50%);
+        width: 95%; 
+        max-width: 500px; 
+        z-index: 1000;
+        background: rgba(15, 5, 40, 0.9) !important; 
+        backdrop-filter: blur(20px);
+        border-radius: 50px; 
+        
+        /* Centrado y espacio */
+        display: flex; 
+        justify-content: space-around; 
+        align-items: center;
+        height: 75px; /* Altura fija para que los iconos respiren */
+        padding: 0 15px;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
     }}
-    .stTabs [data-baseweb="tab"] {{ font-size: 1.5rem; color: rgba(255,255,255,0.4) !important; }}
-    .stTabs [aria-selected="true"] {{ color: #D4FF00 !important; transform: scale(1.15); }}
 
-    .main .block-container {{ padding-bottom: 150px; }}
+    /* 2. Ajuste de los Iconos individuales */
+    .stTabs [data-baseweb="tab"] {{
+        font-size: 2.2rem !important; /* Aumentamos el tamaño para llenar la barra */
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        flex-grow: 1; /* Hace que cada botón ocupe el mismo espacio */
+        display: flex;
+        justify-content: center;
+    }}
+
+    /* 3. Efecto al estar seleccionado */
+    .stTabs [aria-selected="true"] {{
+        transform: scale(1.2);
+        transition: transform 0.3s ease;
+    }}
+
+    /* Ocultar la línea roja/brillante que Streamlit pone por defecto */
+    .stTabs [data-baseweb="tab-highlight"] {{
+        display: none !important;
+    }}
+
+    /* Margen inferior para que el contenido no quede detrás de la barra */
+    .main .block-container {{
+        padding-bottom: 120px;
+    }}
 </style>
 """, unsafe_allow_html=True)
-
-# --- PROCESAMIENTO DE DATOS ---
-if os.path.exists(DB_FILE):
-    df = pd.read_csv(DB_FILE)
-else:
-    df = pd.DataFrame(columns=["Fecha", "Tipo", "Categoría", "Detalle", "Monto"])
-
-if not df.empty:
-    df['Fecha'] = pd.to_datetime(df['Fecha']).dt.date
-
-balance = df[df["Tipo"] == "Ingreso"]["Monto"].sum() - df[df["Tipo"] == "Gasto"]["Monto"].sum() if not df.empty else 0
-
-# --- NAVEGACIÓN POR TABS ---
-t_h, t_c, t_s, t_g, t_i = st.tabs(["🏠", "⚙️", "🐷", "🛍️", "💼"])
-
-with t_h:
-    st.markdown(f"### Hola, {USER_ID.upper()}")
-    st.markdown(f"""
-        <div style="display: flex; gap: 15px; margin-bottom: 20px;">
-            <div class="card-resumen" style="flex: 1; margin-bottom: 0;">
-                <small style="opacity:0.6;">DISPONIBLE</small>
-                <h2 style="margin:0; color:#D4FF00;">${balance:,.2f}</h2>
-            </div>
-            <div class="card-resumen" style="flex: 1; margin-bottom: 0;">
-                <small style="opacity:0.6;">META</small>
-                <h2 style="margin:0;">{min(int((balance/META_AHORRO)*100), 100) if META_AHORRO > 0 else 0}%</h2>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("#### Actividad Reciente")
-    if not df.empty:
-        recents = df[df['Detalle'].notna()].sort_values(by="Fecha", ascending=False).head(5)
-        for _, r in recents.iterrows():
-            st.markdown(f"<div class='history-card'><b>{r['Detalle']}</b><br><small>{r['Fecha']}</small> • <span style='color:#D4FF00;'>${r['Monto']:,.2f}</span></div>", unsafe_allow_html=True)
-
 # --- SECCIÓN METAS DE AHORRO (DISEÑO FLEX) ---
 with t_s:
     st.header("🎯 Mi Meta de Ahorro")
