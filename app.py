@@ -137,4 +137,4 @@ if not df.empty:
         """
         st.markdown(card, unsafe_allow_html=True)
 else:
-    st.info("Sin registros.")")
+    st.info("Sin registros.")"
