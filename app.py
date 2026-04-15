@@ -44,7 +44,7 @@ st.markdown("""
     /* Espaciado para el menú inferior */
     .main .block-container { padding-bottom: 120px; }
 
-    /* Estilo de Tarjetas con soporte para botones internos */
+    /* Estilo de Tarjetas */
     .history-card {
         background: rgba(255, 255, 255, 0.03);
         border-radius: 15px;
@@ -63,6 +63,30 @@ st.markdown("""
         margin-bottom: 25px;
     }
 
-    /* Estilo para el botón de eliminar (Streamlit override) */
+    /* Estilo para el botón de eliminar */
     div[data-testid="column"] button {
-        background-
+        background-color: rgba(255, 75, 75, 0.1) !important;
+        color: #FF4B4B !important;
+        border: 1px solid #FF4B4B !important;
+        height: 28px !important;
+        padding: 0px 10px !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# 4. CARGA DE DATOS
+if os.path.exists(DB_FILE):
+    df = pd.read_csv(DB_FILE)
+    df['Fecha'] = pd.to_datetime(df['Fecha']).dt.date
+else:
+    df = pd.DataFrame(columns=["Fecha", "Tipo", "Categoría", "Detalle", "Monto"])
+
+# 5. MENÚ DE NAVEGACIÓN INFERIOR
+tab_home, tab_stats, tab_expenses, tab_income = st.tabs(["🏠 Inicio", "📊 Gráficos", "🛍️ Compras", "💼 Cartera"])
+
+# --- TAB 1: INICIO (HISTORIAL + ELIMINAR) ---
+with tab_home:
+    st.markdown("<h2 style='text-align:center; color:#C69F40;'>R.C FINANZAS</h2>", unsafe_allow_html=True)
+    
+    total_in = df[df["Tipo"] == "Ingreso"]["Monto"].sum() if not df.empty else 0
+    total
