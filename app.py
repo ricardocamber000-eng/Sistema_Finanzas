@@ -11,37 +11,47 @@ st.set_page_config(page_title="R.C Finanzas", page_icon="👑", layout="centered
 DB_FILE = "wallet_database.csv"
 LOGO_FILE = "Logo_RC.png"
 
-# 3. INTERFAZ VISUAL (CSS DE ALTA PRIORIDAD)
+# 3. INTERFAZ VISUAL (CSS DE ALTA ESPECIFICIDAD - ESTILO DE LA IMAGEN)
 st.markdown("""
 <style>
-    /* Fondo General (Negro Mate / Azul Oscuro) */
+    /* Fondo General (Negro Mate Profundo) */
     .stApp, [data-testid="stAppViewContainer"] {
         background-color: #0E1117 !important;
         background-image: none !important;
     }
 
-    /* Sidebar con Estilo de la Imagen */
+    /* Sidebar con Estilo Premium (como la imagen) */
     [data-testid="stSidebar"] {
         background-color: #07090D !important;
-        border-right: 2px solid #C69F40 !important;
+        border-right: 2px solid #C69F40 !important; /* Borde dorado pro */
     }
 
-    /* Forzar textos en blanco */
-    h1, h2, h3, p, span, label, .stMarkdown {
+    /* Forzar textos en blanco nítido */
+    h1, h2, h3, p, span, label, .stMarkdown, .stSubheader {
         color: #FFFFFF !important;
     }
 
-    /* Tarjetas de Movimientos (Efecto Cristal) */
+    /* --- ESTILO DE TARJETAS (Réplica de la imagen) --- */
     .history-card {
-        background: rgba(255, 255, 255, 0.05) !important;
-        border-left: 6px solid #C69F40 !important;
-        border-radius: 12px !important;
+        background: rgba(255, 255, 255, 0.04) !important; /* Efecto cristal sutil */
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        border-radius: 16px !important;
         padding: 20px !important;
-        margin-bottom: 12px !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
+        margin-bottom: 15px !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important;
+        transition: 0.3s !important;
+    }
+    .history-card:hover {
+        background: rgba(255, 255, 255, 0.07) !important;
+        border: 1px solid rgba(198, 159, 64, 0.2) !important;
+    }
+    
+    /* Borde dorado solo en el lado izquierdo para el efecto de la imagen */
+    .history-card-gold-edge {
+        border-left: 6px solid #C69F40 !important;
     }
 
-    /* Contenedor de Saldo Principal */
+    /* Contenedor de Saldo Principal (Brillo Dorado Central) */
     .main-balance {
         background: linear-gradient(135deg, rgba(198, 159, 64, 0.15), rgba(0,0,0,0.6)) !important;
         border: 1px solid #C69F40 !important;
@@ -49,17 +59,23 @@ st.markdown("""
         border-radius: 30px !important;
         text-align: center;
         margin-bottom: 30px !important;
+        box-shadow: 0 0 20px rgba(198, 159, 64, 0.2) !important;
     }
 
-    /* Botones Dorados */
+    /* Botones Dorados R.C */
     .stButton>button {
         background: linear-gradient(135deg, #C69F40 0%, #8A6D2D 100%) !important;
         color: #000000 !important;
         border: none !important;
-        font-weight: bold !important;
-        border-radius: 8px !important;
-        height: 3em !important;
+        font-weight: 900 !important;
+        border-radius: 12px !important;
+        height: 3.2em !important;
         width: 100% !important;
+        letter-spacing: 1px !important;
+    }
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(198, 159, 64, 0.4) !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -81,7 +97,7 @@ with st.sidebar:
     seccion = st.selectbox("Menú Principal", ["🏠 Inicio", "📊 Análisis Interactivo"])
     st.write("---")
     
-    # Formulario de Registro (Los parámetros que recuperamos)
+    # Formulario de Registro (Mantenemos todos los parámetros)
     st.subheader("Nuevo Movimiento")
     registro_tipo = st.radio("Tipo", ["📉 Gasto", "📈 Ingreso"])
     
@@ -110,27 +126,33 @@ if seccion == "🏠 Inicio":
     total_out = df[df["Tipo"] == "Gasto"]["Monto"].sum() if not df.empty else 0
     balance = total_in - total_out
 
+    # --- DISEÑO DE SALDO CENTRAL (Estilo R.C) ---
     st.markdown(f"""
     <div class="main-balance">
-        <p style="color:#C69F40 !important; font-weight:bold; letter-spacing:4px;">SALDO DISPONIBLE</p>
-        <h1 style="font-size:4.5em; margin:0;">${balance:,.2f}</h1>
+        <p style="color:#C69F40 !important; font-weight:bold; letter-spacing:4px; margin-bottom:5px;">SALDO DISPONIBLE</p>
+        <h1 style="font-size:5em; margin:0; font-weight:800; color:white;">${balance:,.2f}</h1>
     </div>
     """, unsafe_allow_html=True)
     
-    st.subheader("Historial Reciente")
+    # --- DISEÑO DE HISTORIAL (Estilo de la imagen de referencia) ---
+    st.markdown("<h3 style='margin-bottom:20px; color:white;'>Historial Reciente</h3>", unsafe_allow_html=True)
+    
     if not df.empty:
         # Ordenamos por fecha descendente
         for i, r in df.sort_values(by="Fecha", ascending=False).head(10).iterrows():
             txt_color = "#00FF9D" if r['Tipo'] == "Ingreso" else "#FF4B4B"
+            simbolo = "+" if r['Tipo'] == "Ingreso" else "-"
+            
+            # Aplicamos la clase 'history-card-gold-edge' para el borde izquierdo dorado
             st.markdown(f"""
-            <div class="history-card">
+            <div class="history-card history-card-gold-edge">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div>
-                        <b style="font-size:1.1em; color:white;">{r['Detalle']}</b><br>
-                        <small style="color:#C69F40;">{r['Categoría']} • {r['Fecha']}</small>
+                        <b style="font-size:1.2em; color:white;">{r['Detalle']}</b><br>
+                        <small style="color:#C69F40; opacity:0.8;">{r['Categoría']} • {r['Fecha']}</small>
                     </div>
-                    <div style="color:{txt_color}; font-weight:900; font-size:1.4em;">
-                        ${r['Monto']:,.2f}
+                    <div style="color:{txt_color}; font-weight:900; font-size:1.5em; text-align:right;">
+                        {simbolo}${r['Monto']:,.2f}
                     </div>
                 </div>
             </div>
@@ -139,11 +161,12 @@ if seccion == "🏠 Inicio":
         st.info("Todavía no has registrado movimientos.")
 
 elif seccion == "📊 Análisis Interactivo":
+    # Mantenemos el Análisis Interactivo idéntico, solo hereda el fondo oscuro
     st.title("Panel de Control Visual")
     if not df.empty:
         gastos_only = df[df["Tipo"] == "Gasto"]
         if not gastos_only.empty:
-            # Gráfico de Dona como el de la imagen referencial
+            # Gráfico de Dona
             fig = px.pie(gastos_only, values='Monto', names='Categoría', hole=0.6,
                          color_discrete_sequence=['#C69F40', '#D4AF37', '#B8860B', '#8A6D2D'])
             
