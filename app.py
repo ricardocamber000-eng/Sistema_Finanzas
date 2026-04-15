@@ -9,9 +9,27 @@ import io
 # 1. CONFIGURACIÓN E IDENTIDAD
 st.set_page_config(page_title="R.C Finanzas Pro", page_icon="👑", layout="centered")
 
-# --- FUNCIONES DE ALERTA Y CÁLCULO ---
+# --- LÓGICA DE DATOS ---
+LIMITES_DEFAULT = {"Servicios": 200.0, "Mercado": 500.0, "Deudas": 300.0, "Ocio": 150.0, "Varios": 100.0}
+
+@st.cache_data
+def load_all_data(db_path, config_path):
+    df = pd.read_csv(db_path) if os.path.exists(db_path) else pd.DataFrame(columns=["Fecha", "Tipo", "Categoría", "Detalle", "Monto"])
+    if not df.empty:
+        df['Fecha'] = pd.to_datetime(df['Fecha']).dt.date
+    if os.path.exists(config_path):
+        with open(config_path, "r") as f: cfg = json.load(f)
+    else:
+        cfg = {"meta_ahorro": 3000.0, "limites": LIMITES_DEFAULT}
+    return df, cfg
+
+def save_db(df, db_path):
+    df.to_csv(db_path, index=False)
+    st.cache_data.clear()
+    st.rerun()
+
+# --- FUNCIONES DE ALERTA ---
 def disparar_alertas_inicio(df, limites):
-    """Analiza excesos y calcula el monto exacto para volver al 80%."""
     hoy = date.today()
     df_mes = df[(df["Tipo"] == "Gasto") & 
                 (pd.to_datetime(df["Fecha"]).dt.month == hoy.month) & 
@@ -40,38 +58,21 @@ if "authenticated" not in st.session_state:
             if u in USUARIOS and USUARIOS[u] == p:
                 st.session_state.authenticated = True
                 st.session_state.user = u
-                # Ejecutar alertas al entrar
                 df_init, cfg_init = load_all_data(f"db_{u}.csv", f"settings_{u}.json")
-                disparar_alertas_inicio(df_init, cfg_init.get("limites", {}))
+                disparar_alertas_inicio(df_init, cfg_init.get("limites", LIMITES_DEFAULT))
                 st.rerun()
             else: st.error("Acceso incorrecto")
     st.stop()
 
-# --- LÓGICA DE DATOS ---
 USER_ID = st.session_state.user
 DB_FILE = f"db_{USER_ID}.csv"
 CONFIG_FILE = f"settings_{USER_ID}.json"
 
-LIMITES_DEFAULT = {"Servicios": 200.0, "Mercado": 500.0, "Deudas": 300.0, "Ocio": 150.0, "Varios": 100.0}
-
-@st.cache_data
-def load_all_data(db_path, config_path):
-    df = pd.read_csv(db_path) if os.path.exists(db_path) else pd.DataFrame(columns=["Fecha", "Tipo", "Categoría", "Detalle", "Monto"])
-    if not df.empty: df['Fecha'] = pd.to_datetime(df['Fecha']).dt.date
-    if os.path.exists(config_path):
-        with open(config_path, "r") as f: cfg = json.load(f)
-    else: cfg = {"meta_ahorro": 3000.0, "limites": LIMITES_DEFAULT}
-    return df, cfg
-
-def save_db(df):
-    df.to_csv(DB_FILE, index=False)
-    st.cache_data.clear()
-    st.rerun()
-
 df, config_data = load_all_data(DB_FILE, CONFIG_FILE)
-META_AHORRO = config_data["meta_ahorro"]
+META_AHORRO = config_data.get("meta_ahorro", 3000.0)
 LIMITES = config_data.get("limites", LIMITES_DEFAULT)
 
+# --- CÁLCULOS ---
 total_ingresos = df[df["Tipo"] == "Ingreso"]["Monto"].sum() if not df.empty else 0
 total_gastos = df[df["Tipo"] == "Gasto"]["Monto"].sum() if not df.empty else 0
 balance = total_ingresos - total_gastos
@@ -94,15 +95,17 @@ t_h, t_stats, t_s, t_g, t_i, t_c = st.tabs(["🏠", "📊", "🐷", "🛍️", "
 with t_h:
     st.markdown(f"### Hola, {USER_ID.upper()}")
     
-    # Gráfico Gauge
     fig = go.Figure(go.Indicator(
         mode = "gauge+number", value = ratio_consumo * 100,
         number = {'suffix': "%", 'font': {'color': "#FFFFFF"}},
         title = {'text': "Consumo de Ingresos", 'font': {'color': color_main}},
         gauge = {
-            'axis': {'range':, 'tickcolor': "white"},
+            'axis': {'range':, 'tickcolor': "white"}, # CORREGIDO
             'bar': {'color': color_main},
-            'steps': [{'range':, 'color': "rgba(212, 255, 0, 0.1)"}, {'range':, 'color': "rgba(255, 49, 49, 0.1)"}],
+            'steps': [
+                {'range':, 'color': "rgba(212, 255, 0, 0.1)"}, 
+                {'range':, 'color': "rgba(255, 49, 49, 0.1)"}
+            ], # CORREGIDO
             'threshold': {'line': {'color': "white", 'width': 4}, 'thickness': 0.75, 'value': 80}
         }
     ))
@@ -116,50 +119,51 @@ with t_h:
         st.markdown(f"<div class='card-resumen'><small>META AHORRO</small><h2>{p_ahorro}%</h2></div>", unsafe_allow_html=True)
 
 with t_stats:
-    st.subheader("Análisis de Límites y Seguridad (80%)")
-    df_mes = df[(df["Tipo"] == "Gasto") & (pd.to_datetime(df["Fecha"]).dt.month == date.today().month)]
-    gastos_cat = df_mes.groupby("Categoría")["Monto"].sum().to_dict()
+    st.subheader("Análisis de Seguridad (80%)")
+    if not df.empty:
+        df_mes = df[(df["Tipo"] == "Gasto") & (pd.to_datetime(df["Fecha"]).dt.month == date.today().month)]
+        gastos_cat = df_mes.groupby("Categoría")["Monto"].sum().to_dict()
 
-    for cat, lim in LIMITES.items():
-        actual = gastos_cat.get(cat, 0)
-        seguro = lim * 0.8
-        diff = seguro - actual
-        c_bar = "#D4FF00" if diff > 0 else "#FF3131"
-        
-        st.markdown(f"**{cat}** | {'Zona Segura: +$' if diff > 0 else 'Exceso: -$'}{abs(diff):,.2f}")
-        st.progress(min(actual/lim, 1.0))
+        for cat, lim in LIMITES.items():
+            actual = gastos_cat.get(cat, 0)
+            seguro = lim * 0.8
+            diff = seguro - actual
+            st.markdown(f"**{cat}** | {'Zona Segura: +$' if diff > 0 else 'Exceso: -$'}{abs(diff):,.2f}")
+            st.progress(min(actual/lim, 1.0))
+    else:
+        st.info("Registra algunos gastos para ver el análisis.")
 
 with t_c:
-    st.subheader("Gestión de Datos y Reportes")
+    st.subheader("Gestión de Datos")
     if st.button("Cerrar Sesión"):
         del st.session_state.authenticated
         st.rerun()
     
     st.divider()
     if not df.empty:
-        # Generar Excel con Proyecciones
         buf = io.BytesIO()
         with pd.ExcelWriter(buf, engine='xlsxwriter') as wr:
             df.to_excel(wr, sheet_name='Movimientos', index=False)
-            # Proyección 12 meses basada en últimos 90 días
             df_90 = df[pd.to_datetime(df['Fecha']).dt.date >= (date.today() - timedelta(days=90))]
             ahorro_anual = (df_90[df_90["Tipo"]=="Ingreso"]["Monto"].sum() - df_90[df_90["Tipo"]=="Gasto"]["Monto"].sum()) * 4
             pd.DataFrame({"Métrica": ["Proyección Ahorro Anual"], "Valor": [ahorro_anual]}).to_excel(wr, sheet_name='Proyecciones', index=False)
-        
-        st.download_button("Descargar Reporte Excel (.xlsx)", buf.getvalue(), f"finanzas_{USER_ID}.xlsx")
+        st.download_button("Descargar Reporte Excel", buf.getvalue(), f"finanzas_{USER_ID}.xlsx")
 
-# --- REGISTROS (Resumidos para brevedad) ---
 with t_g:
     st.header("Gasto")
     with st.form("fg", True):
         cat = st.selectbox("Categoría", list(LIMITES.keys()))
         det = st.text_input("Detalle")
         mon = st.number_input("Monto", min_value=0.0)
-        if st.form_submit_button("REGISTRAR"): save_db(pd.concat([df, pd.DataFrame([[date.today(), "Gasto", cat, det, mon]], columns=df.columns)]))
+        if st.form_submit_button("REGISTRAR"): 
+            new_row = pd.DataFrame([[date.today(), "Gasto", cat, det, mon]], columns=df.columns)
+            save_db(pd.concat([df, new_row]), DB_FILE)
 
 with t_i:
     st.header("Ingreso")
     with st.form("fi", True):
         det = st.text_input("Origen")
         mon = st.number_input("Monto", min_value=0.0)
-        if st.form_submit_button("CARGAR"): save_db(pd.concat([df, pd.DataFrame([[date.today(), "Ingreso", "Depósito", det, mon]], columns=df.columns)]))
+        if st.form_submit_button("CARGAR"): 
+            new_row = pd.DataFrame([[date.today(), "Ingreso", "Depósito", det, mon]], columns=df.columns)
+            save_db(pd.concat([df, new_row]), DB_FILE)
