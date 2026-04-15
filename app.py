@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import date, timedelta
+from datetime import date
 import os
 import json
 import requests
@@ -9,9 +9,32 @@ from streamlit_lottie import st_lottie
 # 1. CONFIGURACIÓN DE PÁGINA
 st.set_page_config(page_title="R.C Finanzas Pro", page_icon="👑", layout="centered")
 
-# --- ARCHIVOS Y PERSISTENCIA ---
-DB_FILE = "wallet_database.csv"
-CONFIG_FILE = "settings.json"
+# --- CONTROL DE USUARIOS (NUEVO) ---
+USUARIOS = {
+    "admin": "1234",
+    "roberto": "5555",
+    "invitado": "0000"
+}
+
+# --- LÓGICA DE LOGIN (BLOQUEANTE) ---
+if "authenticated" not in st.session_state:
+    st.markdown("<div style='text-align:center; padding:50px 0;'><h1>👑</h1><h2 style='letter-spacing:5px;'>R.C FINANZAS</h2><p style='opacity:0.5;'>Control de Acceso</p></div>", unsafe_allow_html=True)
+    with st.form("Login"):
+        u = st.text_input("Usuario").lower().strip()
+        p = st.text_input("PIN", type="password")
+        if st.form_submit_button("ENTRAR"):
+            if u in USUARIOS and USUARIOS[u] == p:
+                st.session_state.authenticated = True
+                st.session_state.user = u
+                st.rerun()
+            else: 
+                st.error("Acceso incorrecto")
+    st.stop()
+
+# --- ARCHIVOS Y PERSISTENCIA (AHORA POR USUARIO) ---
+USER_ID = st.session_state.user
+DB_FILE = f"db_{USER_ID}.csv"
+CONFIG_FILE = f"settings_{USER_ID}.json"
 
 if "theme" not in st.session_state:
     st.session_state.theme = "Oscuro"
@@ -53,7 +76,7 @@ else:
     accent_gradient = "linear-gradient(90deg, #D4FF00 0%, #A6FF00 100%)"
     shadow_style = "0 20px 50px rgba(0,0,0,0.3)"
 
-# --- ESTILOS CSS REFINADOS (SIN BORDES) ---
+# --- ESTILOS CSS REFINADOS (V1 ORIGINAL) ---
 st.markdown(f"""
 <style>
     .stApp {{
@@ -63,25 +86,22 @@ st.markdown(f"""
     
     h1, h2, h3, h4, p, span, label {{ color: {text_main} !important; }}
     
-    /* Tarjetas Flotantes sin bordes */
     .card-resumen, .history-card {{
         background: {card_bg} !important; 
         backdrop-filter: blur(25px) saturate(180%);
         -webkit-backdrop-filter: blur(25px) saturate(180%);
         border-radius: 30px; 
         padding: 25px;
-        border: none !important; /* Eliminamos el rectángulo encapsulado */
+        border: none !important;
         margin-bottom: 22px;
         box-shadow: {shadow_style};
     }}
     
-    /* Detalle lateral sutil para el historial */
     .history-card {{ 
         border-left: 4px solid {accent} !important;
         background: rgba(255,255,255,0.03) !important;
     }}
     
-    /* Barra de Navegación Minimalista */
     .stTabs [data-baseweb="tab-list"] {{
         position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
         width: 90%; max-width: 500px; z-index: 1000;
@@ -95,7 +115,6 @@ st.markdown(f"""
     .stTabs [data-baseweb="tab"] {{ color: rgba(255,255,255,0.5) !important; font-size: 0.8em; }}
     .stTabs [aria-selected="true"] {{ color: {accent} !important; font-weight: bold; }}
 
-    /* Botones Pro */
     .stButton > button {{
         border-radius: 50px !important; 
         background: {accent_gradient} !important; 
@@ -110,18 +129,6 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-# --- SEGURIDAD ---
-if "authenticated" not in st.session_state:
-    st.markdown("<div style='text-align:center; padding:50px 0;'><h1>👑</h1><h2 style='letter-spacing:5px;'>R.C FINANZAS</h2></div>", unsafe_allow_html=True)
-    with st.form("Login"):
-        u, p = st.text_input("Admin"), st.text_input("PIN", type="password")
-        if st.form_submit_button("ENTRAR"):
-            if u == "admin" and p == "1234":
-                st.session_state.authenticated = True
-                st.rerun()
-            else: st.error("Acceso incorrecto")
-    st.stop()
-
 # --- CARGA DE DATOS ---
 if os.path.exists(DB_FILE):
     df = pd.read_csv(DB_FILE)
@@ -131,6 +138,9 @@ else:
 
 balance = df[df["Tipo"] == "Ingreso"]["Monto"].sum() - df[df["Tipo"] == "Gasto"]["Monto"].sum() if not df.empty else 0
 goal_reached = balance >= META_AHORRO
+
+# --- CABECERA DE USUARIO ---
+st.markdown(f"<div style='text-align:right;'><small style='opacity:0.5;'>Usuario: </small><b>{USER_ID.upper()}</b></div>", unsafe_allow_html=True)
 
 # --- NAVEGACIÓN ---
 t_h, t_c, t_s, t_g, t_i = st.tabs(["🏠", "⚙️", "🐷", "🛍️", "💼"])
@@ -169,10 +179,18 @@ with t_s:
 
 with t_c:
     st.subheader("Configuración")
-    if st.button("Cambiar Tema"):
-        st.session_state.theme = "Claro" if st.session_state.theme == "Oscuro" else "Oscuro"
-        st.rerun()
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Cambiar Tema"):
+            st.session_state.theme = "Claro" if st.session_state.theme == "Oscuro" else "Oscuro"
+            st.rerun()
+    with col2:
+        if st.button("Cerrar Sesión"):
+            del st.session_state.authenticated
+            st.rerun()
+            
     st.divider()
+    st.markdown("#### Gestión de Datos")
     ed_df = st.data_editor(df, num_rows="dynamic", use_container_width=True, hide_index=True)
     if st.button("Guardar Cambios"):
         ed_df.to_csv(DB_FILE, index=False)
@@ -184,7 +202,7 @@ with t_g:
         cat = st.selectbox("Categoría", list(ICONOS.keys()))
         det = st.text_input("Nota")
         mon = st.number_input("Monto", min_value=0.0)
-        if st.form_submit_button("REGISTRAR"):
+        if st.form_submit_button("REGISTRAR GASTO"):
             new = pd.DataFrame([[date.today(), "Gasto", cat, det, mon]], columns=df.columns)
             pd.concat([df, new]).to_csv(DB_FILE, index=False)
             st.rerun()
@@ -194,7 +212,10 @@ with t_i:
     with st.form("fi", clear_on_submit=True):
         det = st.text_input("Origen")
         mon = st.number_input("Monto", min_value=0.0)
-        if st.form_submit_button("CARGAR"):
+        if st.form_submit_button("CARGAR INGRESO"):
             new = pd.DataFrame([[date.today(), "Ingreso", "Depósito", det, mon]], columns=df.columns)
             pd.concat([df, new]).to_csv(DB_FILE, index=False)
             st.rerun()
+
+# --- LÓGICA DE COLORES Y DEGRADADOS (ESTILO V1) ---
+if st.session_state.
