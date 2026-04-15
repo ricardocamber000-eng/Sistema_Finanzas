@@ -9,6 +9,7 @@ st.set_page_config(page_title="R.C Finanzas Pro", page_icon="👑", layout="cent
 
 # --- PARÁMETROS Y DICCIONARIOS ---
 DB_FILE = "wallet_database.csv"
+META_AHORRO = 3000.0  # Tu meta de ahorro
 ICONOS = {
     "Servicios": "💡",
     "Mercado": "🛒",
@@ -63,16 +64,16 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- NAVEGACIÓN ---
-tab_home, tab_stats, tab_expenses, tab_income = st.tabs(["🏠 Inicio", "📊 Análisis", "🛍️ Gastos", "💼 Ingresos"])
+# --- CÁLCULOS GLOBALES ---
+total_in = df[df["Tipo"] == "Ingreso"]["Monto"].sum() if not df.empty else 0
+total_out = df[df["Tipo"] == "Gasto"]["Monto"].sum() if not df.empty else 0
+balance = total_in - total_out
+
+# --- NAVEGACIÓN (Agregado el icono de Cochinito 🐷) ---
+tab_home, tab_stats, tab_savings, tab_expenses, tab_income = st.tabs(["🏠 Inicio", "📊 Análisis", "🐷 Ahorro", "🛍️ Gastos", "💼 Ingresos"])
 
 with tab_home:
     st.markdown("<h2 style='text-align:center;'>MI BILLETERA</h2>", unsafe_allow_html=True)
-    
-    total_in = df[df["Tipo"] == "Ingreso"]["Monto"].sum() if not df.empty else 0
-    total_out = df[df["Tipo"] == "Gasto"]["Monto"].sum() if not df.empty else 0
-    balance = total_in - total_out
-    
     color_borde = "#C69F40" if balance >= 0 else "#FF4B4B"
     st.markdown(f"""
     <div style="background: rgba(255, 255, 255, 0.03); border-radius: 20px; padding: 30px; 
@@ -87,15 +88,11 @@ with tab_home:
         for i, r in df.sort_values(by="Fecha", ascending=False).head(8).iterrows():
             icono = ICONOS.get(r['Categoría'], "📝") if r['Tipo'] == "Gasto" else "💰"
             color_monto = "#00FF9D" if r['Tipo'] == "Ingreso" else "#FF4B4B"
-            
             st.markdown(f"""
             <div class="history-card">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <span style="font-size: 1.2em; margin-right: 10px;">{icono}</span>
-                        <b>{r['Detalle']}</b><br>
-                        <small style="color: #666;">{r['Fecha']} • {r['Categoría']}</small>
-                    </div>
+                    <div><span style="font-size: 1.2em; margin-right: 10px;">{icono}</span><b>{r['Detalle']}</b><br>
+                    <small style="color: #666;">{r['Fecha']} • {r['Categoría']}</small></div>
                     <div style="color:{color_monto}; font-weight:bold;">${r['Monto']:,.2f}</div>
                 </div>
             </div>
@@ -103,46 +100,42 @@ with tab_home:
 
 with tab_stats:
     st.header("Análisis de Finanzas")
-    
     if not df.empty:
-        # Preparación de datos temporales
         df_temp = df.copy()
         df_temp['Fecha'] = pd.to_datetime(df_temp['Fecha'])
-        df_temp['Mes-Año'] = df_temp['Fecha'].dt.strftime('%m-%Y')
         df_temp['Mes-Orden'] = df_temp['Fecha'].dt.to_period('M').astype(str)
-
-        # 1. GRÁFICO DE BARRAS (COMPARATIVA MENSUAL)
         st.subheader("Ingresos vs Gastos por Mes")
         df_resumen = df_temp.groupby(['Mes-Orden', 'Tipo'])['Monto'].sum().reset_index()
-        
-        fig_barras = px.bar(
-            df_resumen,
-            x='Mes-Orden',
-            y='Monto',
-            color='Tipo',
-            barmode='group',
-            color_discrete_map={'Ingreso': '#00FF9D', 'Gasto': '#FF4B4B'}
-        )
-        fig_barras.update_layout(paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', font_color="white")
+        fig_barras = px.bar(df_resumen, x='Mes-Orden', y='Monto', color='Tipo', barmode='group',
+                            color_discrete_map={'Ingreso': '#00FF9D', 'Gasto': '#FF4B4B'})
         st.plotly_chart(fig_barras, use_container_width=True)
 
-        st.divider()
-
-        # 2. GRÁFICO DE PASTEL (DETALLE POR CATEGORÍA)
-        st.subheader("Distribución de Gastos")
-        mes_sel = st.selectbox("Filtrar detalle por mes:", df_temp['Mes-Año'].unique())
-        
-        df_mes = df_temp[(df_temp['Mes-Año'] == mes_sel) & (df_temp['Tipo'] == "Gasto")]
-        
-        if not df_mes.empty:
-            fig_pie = px.pie(df_mes, values='Monto', names='Categoría', hole=0.5,
-                             color_discrete_sequence=['#C69F40', '#D4AF37', '#B8860B', '#8A6D2D'])
-            fig_pie.update_layout(paper_bgcolor='rgba(0,0,0,0)', font_color="white")
-            st.plotly_chart(fig_pie, use_container_width=True)
-        else:
-            st.info("No hay gastos registrados en el mes seleccionado.")
+with tab_savings:
+    st.header("Meta de Ahorro 🐷")
+    
+    # Lógica de Progreso
+    progreso_porcentaje = min(max(balance / META_AHORRO, 0.0), 1.0)
+    
+    st.markdown(f"""
+    <div style="background: rgba(255, 255, 255, 0.03); border-radius: 15px; padding: 20px; border: 1px solid #C69F40;">
+        <h3 style="margin-top:0;">Objetivo: Libertad Financiera</h3>
+        <p style="color:#888;">Progreso actual basado en tu balance disponible.</p>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <span><b>${balance:,.2f}</b> ahorrados</span>
+            <span>Meta: <b>${META_AHORRO:,.2f}</b></span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Barra de progreso nativa de Streamlit (color dorado por CSS arriba)
+    st.progress(progreso_porcentaje)
+    
+    faltante = max(META_AHORRO - balance, 0)
+    if faltante > 0:
+        st.info(f"Te faltan **${faltante:,.2f}** para alcanzar tu meta. ¡Sigue así!")
     else:
-        st.info("Aún no hay datos para mostrar el análisis.")
+        st.balloons()
+        st.success("¡Felicidades! Has alcanzado tu meta de ahorro.")
 
 with tab_expenses:
     st.header("Registrar Gasto 🛍️")
@@ -151,7 +144,7 @@ with tab_expenses:
         det = st.text_input("¿En qué gastaste?")
         mon = st.number_input("Monto ($)", min_value=0.0)
         if st.form_submit_button("GUARDAR GASTO"):
-            new = pd.DataFrame([[date.today(), "Gasto", cat, det, mon]], columns=["Fecha", "Tipo", "Categoría", "Detalle", "Monto"])
+            new = pd.DataFrame([[date.today(), "Gasto", cat, det, mon]], columns=df.columns[:5])
             df = pd.concat([df, new], ignore_index=True)
             df.to_csv(DB_FILE, index=False)
             st.toast(f"Registrado: {det}", icon="✅")
@@ -163,7 +156,7 @@ with tab_income:
         det = st.text_input("Origen del ingreso")
         mon = st.number_input("Monto ($)", min_value=0.0)
         if st.form_submit_button("AÑADIR A CARTERA"):
-            new = pd.DataFrame([[date.today(), "Ingreso", "Depósito", det, mon]], columns=["Fecha", "Tipo", "Categoría", "Detalle", "Monto"])
+            new = pd.DataFrame([[date.today(), "Ingreso", "Depósito", det, mon]], columns=df.columns[:5])
             df = pd.concat([df, new], ignore_index=True)
             df.to_csv(DB_FILE, index=False)
             st.toast("¡Dinero añadido!", icon="💰")
